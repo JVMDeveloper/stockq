@@ -144,20 +144,20 @@ let translate (func_decls, stmts) =
 
   (* Build the code for the given statement; return the builder for
      the statement's successor *)
-  let rec stmtgen builder = function
-    | A.Block sl -> List.fold_left stmtgen builder sl
+  let rec stmtgen func_scope builder = function
+    | A.Block sl -> List.fold_left (stmtgen func_scope) builder sl
     | A.Expr e -> ignore (exprgen builder e); builder
     | A.Return e -> ignore (exprgen builder e); builder
     | A.If (e, s1, s2) ->
         let bool_val = exprgen builder e in
-        let merge_bb = L.append_block context "merge" f in
+        let merge_bb = L.append_block context "merge" func_scope in
 
-        let then_bb = L.append_block context "then" f in
-        add_terminal (stmtgen (L.builder_at_end context then_bb) s1)
+        let then_bb = L.append_block context "then" func_scope in
+        add_terminal (stmtgen func_scope (L.builder_at_end context then_bb) s1)
         (L.build_br merge_bb);
 
-        let else_bb = L.append_block context "else" f in
-        add_terminal (stmtgen (L.builder_at_end context else_bb) s2)
+        let else_bb = L.append_block context "else" func_scope in
+        add_terminal (stmtgen func_scope (L.builder_at_end context else_bb) s2)
         (L.build_br merge_bb);
 
         ignore (L.build_cond_br bool_val then_bb else_bb builder);
@@ -170,7 +170,7 @@ let translate (func_decls, stmts) =
   in
 
   let build_statements builder stmts =
-    let builder = List.fold_left stmtgen builder stmts in
+    let builder = List.fold_left (stmtgen f) builder stmts in
     ignore(L.build_ret (L.const_int i32_t 0) builder);
   in
 
@@ -179,7 +179,7 @@ let translate (func_decls, stmts) =
     let builder = L.builder_at_end context (L.entry_block the_function) in
 
     (* build the code for each statement in the function *)
-    let builder = stmtgen builder (A.Block fdecl.A.body) in
+    let builder = stmtgen the_function builder (A.Block fdecl.A.body) in
 
     (* add a return if the last block falls off the end *)
     add_terminal builder (match fdecl.A.typ with
@@ -189,5 +189,4 @@ let translate (func_decls, stmts) =
   
   ignore (List.iter build_function_body func_decls);
   build_statements builder stmts;
-  
   the_module
