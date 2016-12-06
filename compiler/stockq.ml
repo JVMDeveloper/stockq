@@ -3,8 +3,8 @@ type action = Ast | LLVM_IR | Compile
 let _ =
   let action = if Array.length Sys.argv > 1 then
     List.assoc Sys.argv.(1) [ ("-c", Compile);
-                    ("-a",Ast);
-                    ("-l",LLVM_IR)] (* Generate LLVM, don't check *)
+                              ("-a",Ast);
+                              ("-l",LLVM_IR)] (* Generate LLVM, don't check *)
   else Compile in
   let lexbuf = Lexing.from_channel stdin in
   let ast = Parser.program Scanner.token lexbuf in

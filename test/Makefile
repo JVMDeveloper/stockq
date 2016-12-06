@@ -1,4 +1,4 @@
-# StockX: test Makefile
+# StockQ: test Makefile
 #  - builds all files needed for testing, then runs tests
 
 default: test clean

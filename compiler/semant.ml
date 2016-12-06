@@ -1,4 +1,4 @@
-(* Semantic checking for the StockX compiler *)
+(* Semantic checking for the StockQ compiler *)
 
 open Ast
 
@@ -10,7 +10,7 @@ module StringMap = Map.Make(String)
 
 let check (func_decls, stmts) =
 
-  (* Raise an exception if teh given list has a duplicate *)
+  (* Raise an exception if the given list has a duplicate *)
   let report_duplicate exceptf list =
     let rec helper = function
       | n1 :: n2 :: _ when n1 = n2 -> raise (Failure (exceptf n1))
@@ -32,8 +32,4 @@ let check (func_decls, stmts) =
 
   report_duplicate (fun n -> "duplicate function " ^ n)
     (List.map (fun fd -> fd.fname) func_decls);
-
-
-
-
   ()

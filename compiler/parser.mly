@@ -1,4 +1,4 @@
-/* Ocamlyacc parser for StockX */
+/* Ocamlyacc parser for StockQ */
 
 %{
 open Ast

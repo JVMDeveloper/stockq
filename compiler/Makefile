@@ -1,28 +1,28 @@
-# StockX: compiler Makefile
+# StockQ: compiler Makefile
 #  - builds and manages all compiler components
 
 
-default: clean stockx 
+default: clean stockq
 
-.PHONY: stockx.native
-stockx.native:
+.PHONY: stockq.native
+stockq.native:
 	ocamlbuild -use-ocamlfind -pkgs llvm,llvm.analysis -cflags \
-		-w,+a-4 stockx.native
-	mv stockx.native stockx
+		-w,+a-4 stockq.native
+	mv stockq.native stockq
 
 .PHONY: clean
 clean:
 	ocamlbuild -clean
-	rm -rf testall.log *.diff stockx scanner.ml parser.ml parser.mli
+	rm -rf testall.log *.diff stockq scanner.ml parser.ml parser.mli
 	rm -rf *.cmx *.cmi *.cmo *.cmx *.o temp.ll
 
 
 # More detailed: build using ocamlc/ocamlopt + ocamlfind to locate LLVM
 
-OBJS = ast.cmx utils.cmx codegen.cmx parser.cmx scanner.cmx semant.cmx stockx.cmx
+OBJS = ast.cmx utils.cmx codegen.cmx parser.cmx scanner.cmx semant.cmx stockq.cmx
 
-stockx: $(OBJS)
-	ocamlfind ocamlopt -linkpkg -package llvm -package llvm.analysis $(OBJS) -o stockx
+stockq: $(OBJS)
+	ocamlfind ocamlopt -linkpkg -package llvm -package llvm.analysis $(OBJS) -o stockq
 
 scanner.ml: scanner.mll
 	ocamllex scanner.mll
@@ -46,8 +46,8 @@ utils.cmo: ast.cmo
 utils.cmx: ast.cmx
 codegen.cmo: ast.cmo
 codegen.cmx: ast.cmx
-stockx.cmo: semant.cmo scanner.cmo parser.cmi codegen.cmo ast.cmo utils.cmo
-stockx.cmx: semant.cmx scanner.cmx parser.cmx codegen.cmx ast.cmx utils.cmx
+stockq.cmo: semant.cmo scanner.cmo parser.cmi codegen.cmo ast.cmo utils.cmo
+stockq.cmx: semant.cmx scanner.cmx parser.cmx codegen.cmx ast.cmx utils.cmx
 parser.cmo: ast.cmo parser.cmi
 parser.cmx: ast.cmx parser.cmi
 scanner.cmo: parser.cmi

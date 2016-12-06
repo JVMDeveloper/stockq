@@ -1,4 +1,4 @@
-(* Ocamllex scanner for StockX *)
+(* Ocamllex scanner for StockQ *)
 
 {
     open Parser

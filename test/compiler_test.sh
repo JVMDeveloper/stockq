@@ -5,16 +5,16 @@ CYAN='\033[0;36m'
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 
-INPUT_FILES="compiler/*.sx"
+INPUT_FILES="compiler/*.sq"
 printf "${CYAN}Running compiler tests...\n${NC}"
 
 for input_file in $INPUT_FILES; do
-    llfile=${input_file/.sx/.ll}
-    tmpfile=${input_file/.sx/.tempout}
-    output_file=${input_file/.sx/.out}
+    llfile=${input_file/.sq/.ll}
+    tmpfile=${input_file/.sq/.tempout}
+    output_file=${input_file/.sq/.out}
 
-    # compile stockx program to llvm file
-    ../compiler/stockx.sh $input_file -c $llfile
+    # compile stockq program to llvm file
+    ../compiler/stockq.sh $input_file -c $llfile
 
     lli "$llfile" > "$tmpfile"
     echo '' >> "$tmpfile"
