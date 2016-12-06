@@ -1,0 +1,5 @@
+FloatLiteral(5.5556)
+IntLiteral(42)
+StringLiteral(hello world)
+BoolLiteral(true)
+BoolLiteral(false)

@@ -1,0 +1,1 @@
+While(Binop(Id(x), Less, IntLiteral(42))) { Block(Call(print, StringLiteral(42 is my favorite number))) }

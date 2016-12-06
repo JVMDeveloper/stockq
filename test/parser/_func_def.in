@@ -1,0 +1,3 @@
+function myfunc (int x, int y) returns int {
+    3+4;
+}

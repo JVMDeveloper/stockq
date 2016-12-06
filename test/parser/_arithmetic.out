@@ -1,0 +1,8 @@
+Binop(IntLiteral(1), Add, IntLiteral(2))
+Binop(IntLiteral(4), Add, FloatLiteral(5.6))
+Binop(IntLiteral(3), Sub, IntLiteral(2))
+Binop(IntLiteral(2), Mult, IntLiteral(3))
+Binop(IntLiteral(10), Div, IntLiteral(5))
+Binop(IntLiteral(9), Mod, IntLiteral(4))
+Unop(Neg, IntLiteral(100))
+Binop(IntLiteral(4), Mult, Binop(IntLiteral(3), Sub, IntLiteral(1)))

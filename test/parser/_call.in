@@ -1,0 +1,5 @@
+myvar;
+studentAge;
+print("hello");
+myfunc(myvar);
+get_string(my_int);

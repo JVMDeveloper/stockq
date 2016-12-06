@@ -1,0 +1,3 @@
+while ( x < 42 ) {
+    print("42 is my favorite number");
+}

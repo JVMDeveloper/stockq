@@ -1,0 +1,1 @@
+For(Assign(x, IntLiteral(3)); Binop(Id(x), Less, IntLiteral(10)); Noexpr) { Block(Call(print, StringLiteral(why do meteors always land in craters?))) }

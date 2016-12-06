@@ -1,0 +1,5 @@
+Id(myvar)
+Id(studentAge)
+Call(print, StringLiteral(hello))
+Call(myfunc, Id(myvar))
+Call(get_string, Id(my_int))

@@ -1,0 +1,5 @@
+FUNCTION myfunc (x, y) returns int
+{
+	Binop(IntLiteral(3), Add, IntLiteral(4))
+}
+
