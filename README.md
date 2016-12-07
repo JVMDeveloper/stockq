@@ -1,4 +1,4 @@
-# StockQ Language
+# StockQ
 A financial programming language
 
 ## Requirements

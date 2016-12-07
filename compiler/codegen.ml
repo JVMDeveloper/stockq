@@ -139,7 +139,7 @@ let translate (func_decls, stmts) =
                                            | _ -> f ^ "_result")
         in L.build_call fdef (Array.of_list actuals) result builder
     | A.ObjAccess (e1, e2) -> L.build_global_stringptr "Hi" "" builder
-    | A.Noexpr -> L.build_global_stringptr "Hi" "" builder
+    | A.Noexpr -> L.const_int i32_t 0
   in
 
   (* Build the code for the given statement; return the builder for
@@ -164,7 +164,26 @@ let translate (func_decls, stmts) =
         L.builder_at_end context merge_bb
 
     | A.For (e1, e2, e3, s) -> builder
-    | A.While (e, s) -> builder
+    | A.While (e, s) ->
+        let pred_bb = L.append_block context "while" func_scope
+        in
+        ignore (L.build_br pred_bb builder);
+
+        let body_bb = L.append_block context "while_body" func_scope
+        in
+        add_terminal (stmtgen func_scope (L.builder_at_end context body_bb) s)
+        (L.build_br pred_bb);
+
+        let pred_builder = L.builder_at_end context pred_bb
+        in
+        let bool_val = exprgen pred_builder e
+        in
+
+        let merge_bb = L.append_block context "merge" func_scope
+        in
+        ignore (L.build_cond_br bool_val body_bb merge_bb pred_builder);
+        L.builder_at_end context merge_bb
+
     | A.Local (t, s, Noexpr) -> builder
     | A.Local (t, s, e) -> ignore (exprgen builder (A.Assign(s, e))); builder
   in
