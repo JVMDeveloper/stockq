@@ -27,7 +27,6 @@ rule token = parse
 | '}'           { RBRACE }
 | ';'           { SEMI }
 | ','           { COMMA }
-| "function"    { FUNCTION }
 
 (* operators *)
 | '+'       { PLUS }
@@ -61,7 +60,7 @@ rule token = parse
 | "for"     { FOR }
 | "while"   { WHILE }
 | "return"  { RETURN }
-| "returns" { RETURNS }
+| "def"     { DEF }
 
 (* Data Types *)
 | "int"     { INT }

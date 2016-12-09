@@ -48,9 +48,6 @@ let rec string_of_expr = function
   | Call(s, el)         -> "Call(" ^ s ^ ", " ^
                            String.concat ", " (List.map string_of_expr el) ^
                            ")"
-  | ObjAccess(e1, e2)   -> "ObjAccess(" ^
-                           string_of_expr e1 ^ ", " ^
-                           string_of_expr e2 ^ ")"
   | Noexpr              -> "Noexpr"
 
 let rec string_of_stmt = function

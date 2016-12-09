@@ -1,5 +1,4 @@
-FUNCTION myfunc (x, y) returns int
-{
+def int myfunc (x, y) {
 	Binop(IntLiteral(3), Add, IntLiteral(4))
 }
 

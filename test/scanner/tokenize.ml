@@ -29,7 +29,7 @@ let stringify = function
   | FOR     -> "FOR"
   | WHILE   -> "WHILE"
   | RETURN  -> "RETURN"
-  | RETURNS -> "RETURNS"
+  | DEF     -> "DEF"
 
   | INT     -> "INT"    | FLOAT     -> "FLOAT"
   | BOOL    -> "BOOL"   | VOID      -> "VOID"
@@ -38,8 +38,6 @@ let stringify = function
   | STOCK   -> "STOCK"  | PORTFOLIO -> "PORTFOLIO"
   | STRUCT  -> "STRUCT" | ARRAY     -> "ARRAY"
   | STRING  -> "STRING"
-
-  | FUNCTION -> "FUNCTION"
 
   | INT_LITERAL(i)      -> "INT_LITERAL"
   | FLOAT_LITERAL(f)    -> "FLOAT_LITERAL"
