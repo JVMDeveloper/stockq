@@ -20,7 +20,6 @@ type expr =
   | Unop of uop * expr
   | Assign of string * expr
   | Call of string * expr list
-  | ObjAccess of expr * expr
   | Noexpr
 
 type stmt =
@@ -33,9 +32,9 @@ type stmt =
   | Local of typ * string * expr
 
 type func_decl = {
+	typ : typ;
     fname : string;
     formals : bind list;
-	typ : typ;
     body : stmt list;
   }
 

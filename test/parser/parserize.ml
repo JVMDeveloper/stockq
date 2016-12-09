@@ -48,9 +48,6 @@ let rec string_of_expr = function
   | Call(s, el)         -> "Call(" ^ s ^ ", " ^
                            String.concat ", " (List.map string_of_expr el) ^
                            ")"
-  | ObjAccess(e1, e2)   -> "ObjAccess(" ^
-                           string_of_expr e1 ^ ", " ^
-                           string_of_expr e2 ^ ")"
   | Noexpr              -> "Noexpr"
 
 let rec string_of_stmt = function
@@ -67,13 +64,14 @@ let rec string_of_stmt = function
                             string_of_stmt s ^ " }"
   | While(e, s)     ->  "While(" ^ string_of_expr e ^ ") { " ^
                         string_of_stmt s ^ " }"
+  | Local(t, id, e) ->  "Local(" ^ string_of_typ t ^ ", " ^ id ^
+                        ", " ^ string_of_expr e ^ ")"
 
 let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
 
 let rec string_of_func func =
-  "FUNCTION " ^ func.fname ^ " (" ^
-  String.concat ", " (List.map snd func.formals) ^ ") " ^
-  "returns " ^ string_of_typ func.typ ^ "\n{\n\t" ^
+  "def " ^ string_of_typ func.typ ^ " " ^ func.fname ^ " (" ^
+  String.concat ", " (List.map snd func.formals) ^ ") {\n\t" ^
   String.concat "\n\t" (List.map string_of_stmt func.body) ^
   "\n}\n"
 

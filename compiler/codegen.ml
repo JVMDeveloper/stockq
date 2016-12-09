@@ -138,7 +138,6 @@ let translate (func_decls, stmts) =
         let result = (match fdecl.A.typ with A.Void -> ""
                                            | _ -> f ^ "_result")
         in L.build_call fdef (Array.of_list actuals) result builder
-    | A.ObjAccess (e1, e2) -> L.build_global_stringptr "Hi" "" builder
     | A.Noexpr -> L.const_int i32_t 0
   in
 
