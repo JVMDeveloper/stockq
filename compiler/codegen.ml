@@ -11,6 +11,9 @@ let translate (functions, stmts) =
   and i1_t     = L.i1_type    context
   and double_t = L.double_type context in
 
+  (* defines what the func_name is of the "function-less" stmts *)
+  let main_func_name = "main" in
+
   let ltype_of_typ = function
     | A.Int -> i32_t
     | A.Float -> double_t
@@ -43,7 +46,7 @@ let translate (functions, stmts) =
    *)
   let build_function_body fdecl =
     let the_function =
-      if fdecl.A.fname = "main" then
+      if fdecl.A.fname = main_func_name then
         let fty = L.function_type i32_t [| |] in
         L.define_function "main" fty the_module
       else
@@ -72,7 +75,7 @@ let translate (functions, stmts) =
         | _ :: r -> get_locals mylocals r
       in
       List.fold_left add_local StringMap.empty
-        (get_locals [] (if fdecl.A.fname = "main" then stmts else fdecl.A.body))
+        (get_locals [] (if fdecl.A.fname = main_func_name then stmts else fdecl.A.body))
     in
 
     (* return the value for a variable *)
@@ -197,12 +200,13 @@ let translate (functions, stmts) =
         in
         ignore (L.build_cond_br bool_val body_bb merge_bb pred_builder);
         L.builder_at_end context merge_bb
-
-      | A.Local (t, s, Noexpr) -> builder
-      | A.Local (t, s, e) -> ignore (exprgen builder (A.Assign(s, e))); builder
+      
+      | A.Local (t, s, e) -> (match e with
+        | A.Noexpr -> builder
+        | _ -> ignore(exprgen builder (A.Assign(s, e))); builder)
     in
 
-    if fdecl.A.fname = "main" then
+    if fdecl.A.fname = main_func_name then
       let builder = List.fold_left stmtgen builder stmts in
       ignore(L.build_ret (L.const_int i32_t 0) builder);
     else
@@ -210,16 +214,9 @@ let translate (functions, stmts) =
       add_terminal builder (match fdecl.A.typ with
         | A.Void -> L.build_ret_void
         | t -> L.build_ret (L.const_int (ltype_of_typ t) 0));
-(*
-    let builder = List.fold_left stmtgen builder
-        (if fdecl.A.fname = "main" then stmts else fdecl.A.body)
-    in
-
-    ignore(L.build_ret (L.const_int i32_t 0) builder);
-    *)
   in
 
   List.iter build_function_body functions;
-  let mainfdecl = A.{ typ = A.Int; fname = "main"; formals = []; body = [] } in
+  let mainfdecl = A.{ typ = A.Int; fname = main_func_name; formals = []; body = [] } in
   build_function_body mainfdecl;
   the_module
