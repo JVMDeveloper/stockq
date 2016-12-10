@@ -40,8 +40,8 @@ program:
 
 decls:
     /* nothing */   { [], [] }
-  | decls fdecl     { ($2 :: fst $1), snd $1 }
-  | decls stmt      { fst $1, ($2 :: snd $1) }
+  | decls fdecl     { (fst $1 @ [$2]), snd $1 }
+  | decls stmt      { fst $1, (snd $1 @ [$2]) }
 
 fdecls:
     /* nothing */       { [] }
