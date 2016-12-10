@@ -36,8 +36,12 @@ open Ast
 %%
 
 program:
-        fdecls stmts EOF { $1, $2 }
+    decls EOF { $1 }
 
+decls:
+    /* nothing */   { [], [] }
+  | decls fdecl     { ($2 :: fst $1), snd $1 }
+  | decls stmt      { fst $1, ($2 :: snd $1) }
 
 fdecls:
     /* nothing */       { [] }

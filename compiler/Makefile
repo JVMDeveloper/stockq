@@ -10,6 +10,10 @@ stockq.native:
 		-w,+a-4 stockq.native
 	mv stockq.native stockq
 
+.PHONY: test
+test:
+	cd ..; cd test; make
+
 .PHONY: clean
 clean:
 	ocamlbuild -clean
