@@ -30,6 +30,9 @@ let check (func_decls, stmts) =
   if List.mem "print" (List.map (fun fd -> fd.fname) func_decls)
   then raise (Failure ("function print may not be defined")) else ();
 
+  if List.mem "main" (List.map (fun fd -> fd.fname) func_decls)
+  then raise (Failure ("function main may not be defined")) else ();
+
   report_duplicate (fun n -> "duplicate function " ^ n)
     (List.map (fun fd -> fd.fname) func_decls);
   ()

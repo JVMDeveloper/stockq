@@ -158,7 +158,10 @@ let translate (functions, stmts) =
     let rec stmtgen builder = function
       | A.Block sl -> List.fold_left stmtgen builder sl
       | A.Expr e -> ignore(exprgen builder e); builder
-      | A.Return e -> ignore(exprgen builder e); builder
+      | A.Return e -> ignore (match fdecl.A.typ with
+        | A.Void -> L.build_ret_void builder
+        | _ -> L.build_ret (exprgen builder e) builder); builder
+
       | A.If (e, s1, s2) ->
         let bool_val = exprgen builder e in
         let merge_bb = L.append_block context "merge" the_function in
@@ -199,11 +202,21 @@ let translate (functions, stmts) =
       | A.Local (t, s, e) -> ignore (exprgen builder (A.Assign(s, e))); builder
     in
 
+    if fdecl.A.fname = "main" then
+      let builder = List.fold_left stmtgen builder stmts in
+      ignore(L.build_ret (L.const_int i32_t 0) builder);
+    else
+      let builder = List.fold_left stmtgen builder fdecl.A.body in
+      add_terminal builder (match fdecl.A.typ with
+        | A.Void -> L.build_ret_void
+        | t -> L.build_ret (L.const_int (ltype_of_typ t) 0));
+(*
     let builder = List.fold_left stmtgen builder
         (if fdecl.A.fname = "main" then stmts else fdecl.A.body)
     in
 
     ignore(L.build_ret (L.const_int i32_t 0) builder);
+    *)
   in
 
   List.iter build_function_body functions;
