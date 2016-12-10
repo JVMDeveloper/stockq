@@ -63,6 +63,21 @@ let translate (functions, stmts) =
 
     (* construct the function's "locals" *)
     let local_vars =
+
+      (* get formals first, if this is a function decl *)
+      let formals =
+        if fdecl.A.fname = main_func_name then
+          StringMap.empty
+        else
+          let add_formal m (t, n) p = L.set_value_name n p;
+            let local = L.build_alloca (ltype_of_typ t) n builder in
+            ignore (L.build_store p local builder);
+            StringMap.add n local m
+          in
+          List.fold_left2 add_formal StringMap.empty fdecl.A.formals
+            (Array.to_list (L.params the_function))
+      in
+
       let add_local m (t, n) =
         let local_var = L.build_alloca (ltype_of_typ t) n builder
         in StringMap.add n local_var m
@@ -74,7 +89,7 @@ let translate (functions, stmts) =
         | A.Local (t, s, e) :: r -> get_locals ((t, s) :: mylocals) r
         | _ :: r -> get_locals mylocals r
       in
-      List.fold_left add_local StringMap.empty
+      List.fold_left add_local formals
         (get_locals [] (if fdecl.A.fname = main_func_name then stmts else fdecl.A.body))
     in
 
