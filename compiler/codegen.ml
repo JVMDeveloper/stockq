@@ -195,7 +195,8 @@ let translate (functions, stmts) =
         ignore (L.build_cond_br bool_val then_bb else_bb builder);
         L.builder_at_end context merge_bb
 
-      | A.For (e1, e2, e3, s) -> builder
+      | A.For (e1, e2, e3, s) -> stmtgen builder
+          ( A.Block [A.Expr e1 ; A.While (e2, A.Block [s ; A.Expr e3]) ] )
       | A.While (e, s) ->
         let pred_bb = L.append_block context "while" the_function
         in
