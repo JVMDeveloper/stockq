@@ -41,9 +41,9 @@ let translate (functions, stmts) =
    * statements outside of any functions.
    * t=0 -> functions, t=1 -> statements
    *)
-  let build_function_body t fdecl =
+  let build_function_body fdecl =
     let the_function =
-      if t = 1 then
+      if fdecl.A.fname = "main" then
         let fty = L.function_type i32_t [| |] in
         L.define_function "main" fty the_module
       else
@@ -72,7 +72,7 @@ let translate (functions, stmts) =
         | _ :: r -> get_locals mylocals r
       in
       List.fold_left add_local StringMap.empty
-        (get_locals [] (if t = 0 then fdecl.A.body else stmts))
+        (get_locals [] (if fdecl.A.fname = "main" then stmts else fdecl.A.body))
     in
 
     (* return the value for a variable *)
@@ -154,8 +154,6 @@ let translate (functions, stmts) =
         | None -> ignore (f builder)
     in
 
-
-      
     (* build the statements in a function *)
     let rec stmtgen builder = function
       | A.Block sl -> List.fold_left stmtgen builder sl
@@ -201,12 +199,14 @@ let translate (functions, stmts) =
       | A.Local (t, s, e) -> ignore (exprgen builder (A.Assign(s, e))); builder
     in
 
-    let builder = List.fold_left stmtgen builder (if t = 0 then fdecl.A.body else stmts) in
+    let builder = List.fold_left stmtgen builder
+        (if fdecl.A.fname = "main" then stmts else fdecl.A.body)
+    in
 
     ignore(L.build_ret (L.const_int i32_t 0) builder);
   in
 
-  List.iter (build_function_body 0) functions;
-  let fakefdecl = A.{ typ = A.Int; fname = "fake"; formals = []; body = [] } in
-  build_function_body 1 fakefdecl;
+  List.iter build_function_body functions;
+  let mainfdecl = A.{ typ = A.Int; fname = "main"; formals = []; body = [] } in
+  build_function_body mainfdecl;
   the_module
