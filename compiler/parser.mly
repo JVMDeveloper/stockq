@@ -43,19 +43,6 @@ decls:
   | decls fdecl     { (fst $1 @ [$2]), snd $1 }
   | decls stmt      { fst $1, (snd $1 @ [$2]) }
 
-fdecls:
-    /* nothing */       { [] }
-  | fdecl_list          { List.rev $1 }
-
-fdecl_list:
-    fdecl               { [$1] }
-  | fdecl_list fdecl    { $2 :: $1 }
-
-
-stmts:
-    /* nothing */       { [] }
-  | stmt_list           { List.rev $1 }
-
 stmt_list:
     stmt                { [$1] }
   | stmt_list stmt      { $2 :: $1 }
@@ -120,6 +107,11 @@ expr:
 |   expr TIMES  expr    { Binop($1, Mult, $3) }
 |   expr DIVIDE expr    { Binop($1, Div, $3) }
 |   expr MODULO expr    { Binop($1, Mod, $3) }
+|   expr PLUSEQ expr    { Binop($1, Addeq, $3) }
+|   expr MINUSEQ  expr  { Binop($1, Subeq, $3) }
+|   expr TIMESEQ  expr  { Binop($1, Multeq, $3) }
+|   expr DIVIDEEQ expr  { Binop($1, Diveq, $3) }
+|   expr MODULOEQ expr  { Binop($1, Modeq, $3) }
 |   expr EQ     expr    { Binop($1, Equal, $3) }
 |   expr NEQ    expr    { Binop($1, Neq, $3) }
 |   expr LT     expr    { Binop($1, Less, $3) }

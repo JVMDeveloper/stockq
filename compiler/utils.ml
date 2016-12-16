@@ -6,6 +6,11 @@ let string_of_op = function
   | Mult    -> "Mult"
   | Div     -> "Div"
   | Mod     -> "Mod"
+  | Addeq   -> "Addeq"
+  | Subeq   -> "Subeq"
+  | Multeq  -> "Multeq"
+  | Diveq   -> "Diveq"
+  | Modeq   -> "Modeq"
   | Equal   -> "Equal"
   | Neq     -> "Neq"
   | Less    -> "Less"
@@ -30,6 +35,10 @@ let string_of_typ = function
   | String  -> "string"
   | Array   -> "array"
   | Struct  -> "struct"
+
+let rec string_of_id = function
+  | Id(s)   -> s
+  | _       -> ""
 
 let rec string_of_expr = function
   | IntLiteral(i)       -> "IntLiteral(" ^ string_of_int i ^ ")"

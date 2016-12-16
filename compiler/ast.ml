@@ -1,6 +1,7 @@
 (* Abstract Syntax Tree and functions for printing it *)
 
 type op = Add | Sub | Mult | Div | Mod | Equal |
+          Addeq | Subeq | Multeq | Diveq | Modeq |
           Neq | Less | Leq | Greater | Geq | And | Or
 
 type uop = Neg | Not

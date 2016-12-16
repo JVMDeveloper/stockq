@@ -52,7 +52,6 @@ rule token = parse
 | '.'       { DOT }
 | '['       { LBRACKET }
 | ']'       { RBRACKET }
-| '|'       { BAR }
 
 (* branch control *)
 | "if"      { IF }

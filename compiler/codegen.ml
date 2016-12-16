@@ -1,5 +1,6 @@
 module L = Llvm
 module A = Ast
+module U = Utils
 
 module StringMap = Map.Make(String)
 
@@ -63,7 +64,6 @@ let translate (functions, stmts) =
 
     (* construct the function's "locals" *)
     let local_vars =
-
       (* get formals first, if this is a function decl *)
       let formals =
         if fdecl.A.fname = main_func_name then
@@ -107,20 +107,26 @@ let translate (functions, stmts) =
         let e1' = exprgen builder e1
         and e2' = exprgen builder e2 in
         (match op with
-          | A.Add     -> L.build_add
-          | A.Sub     -> L.build_sub
-          | A.Mult    -> L.build_mul
-          | A.Div     -> L.build_sdiv
-          | A.Mod     -> L.build_add (* NEEDS CHANGING *)
-          | A.And     -> L.build_and
-          | A.Or      -> L.build_or
-          | A.Equal   -> L.build_icmp L.Icmp.Eq
-          | A.Neq     -> L.build_icmp L.Icmp.Ne
-          | A.Less    -> L.build_icmp L.Icmp.Slt
-          | A.Leq     -> L.build_icmp L.Icmp.Sle
-          | A.Greater -> L.build_icmp L.Icmp.Sgt
-          | A.Geq     -> L.build_icmp L.Icmp.Sge
-        ) e1' e2' "tmp" builder
+          | A.Add     -> L.build_add    e1' e2' "tmp" builder
+          | A.Sub     -> L.build_sub    e1' e2' "tmp" builder
+          | A.Mult    -> L.build_mul    e1' e2' "tmp" builder
+          | A.Div     -> L.build_sdiv   e1' e2' "tmp" builder
+          | A.Mod     -> L.build_srem   e1' e2' "tmp" builder
+          | A.And     -> L.build_and    e1' e2' "tmp" builder
+          | A.Or      -> L.build_or     e1' e2' "tmp" builder
+          | A.Equal   -> L.build_icmp L.Icmp.Eq     e1' e2' "tmp" builder
+          | A.Neq     -> L.build_icmp L.Icmp.Ne     e1' e2' "tmp" builder
+          | A.Less    -> L.build_icmp L.Icmp.Slt    e1' e2' "tmp" builder
+          | A.Leq     -> L.build_icmp L.Icmp.Sle    e1' e2' "tmp" builder
+          | A.Greater -> L.build_icmp L.Icmp.Sgt    e1' e2' "tmp" builder
+          | A.Geq     -> L.build_icmp L.Icmp.Sge    e1' e2' "tmp" builder
+
+          | A.Addeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Add, e2)))
+          | A.Subeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Sub, e2)))
+          | A.Multeq  -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Mult, e2)))
+          | A.Diveq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Div, e2)))
+          | A.Modeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Mod, e2)))
+        )
       | A.Unop (uop, e) -> let e' = exprgen builder e in
           (match uop with
             | A.Neg   -> L.build_neg
