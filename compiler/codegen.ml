@@ -7,18 +7,20 @@ module StringMap = Map.Make(String)
 let translate (functions, stmts) =
   let context = L.global_context () in
   let the_module = L.create_module context "StockX"
-  and i32_t    = L.i32_type   context
-  and i8_t     = L.i8_type    context
-  and i1_t     = L.i1_type    context
-  and double_t = L.double_type context in
+  and i32_t     = L.i32_type    context
+  and i8_t      = L.i8_type     context
+  and i1_t      = L.i1_type     context
+  and void_t    = L.void_type   context 
+  and double_t  = L.double_type context in
 
   (* defines what the func_name is of the "function-less" stmts *)
   let main_func_name = "main" in
 
   let ltype_of_typ = function
-    | A.Int -> i32_t
-    | A.Float -> double_t
-    | A.Bool -> i1_t
+    | A.Int     -> i32_t
+    | A.Float   -> double_t
+    | A.Bool    -> i1_t
+    | A.Void    -> void_t
     | _ -> i32_t
   in
 
@@ -162,7 +164,6 @@ let translate (functions, stmts) =
                             [| int_format_str; f |]
                             "printf" builder
         in func e
-      (* or another A.Call *)
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
           let actuals = List.rev (List.map (exprgen builder) (List.rev act)) in
