@@ -1,4 +1,5 @@
 open Ast
+open Parser
 
 let string_of_op = function
   | Add     -> "Add"
@@ -42,7 +43,7 @@ let rec print_brackets = function
 
 let string_of_datatype = function
   | Primitive(p)    -> string_of_primitive p
-  | Arraytype(p, i) -> (string_of_primitive p) ^ print_brackets i
+  | Arraytype(p, i) -> string_of_primitive p ^ print_brackets i
 
 let rec string_of_id = function
   | Id(s)   -> s
@@ -98,6 +99,51 @@ let rec string_of_program stor = function
   | ([], stmt :: tl) -> string_of_program (string_of_stmt stmt :: stor) ([], tl)
   | (func :: tl, []) -> string_of_program (string_of_func func :: stor) (tl, [])
 
-    (* print all functions first, then statements *)
+    (* return all functions first, then statements *)
   | (func :: ftl, stmts) ->
         string_of_program (string_of_func func :: stor) (ftl, stmts)
+
+let string_of_token = function
+  | LPAREN  -> "LPAREN" | RPAREN    -> "RPAREN"
+  | LBRACE  -> "LBRACE" | RBRACE    -> "RBRACE"
+  | SEMI    -> "SEMI"   | COMMA     -> "COMMA"
+
+  | PLUS    -> "PLUS"   | MINUS     -> "MINUS"
+  | TIMES   -> "TIMES"  | DIVIDE    -> "DIVIDE"
+  | MODULO  -> "MODULO"
+
+  | PLUSEQ  -> "PLUSEQ"     | MINUSEQ   -> "MINUSEQ"
+  | TIMESEQ -> "TIMESEQ"    | DIVIDEEQ  -> "DIVIDEEQ"
+  | MODULOEQ -> "MODULOEQ"
+
+  | ASSIGN  -> "ASSIGN"
+
+  | EQ      -> "EQ"     | NEQ       -> "NEQ"
+  | LT      -> "LT"     | LEQ       -> "LEQ"
+  | GT      -> "GT"     | GEQ       -> "GEQ"
+  | AND     -> "AND"    | OR        -> "OR"
+  | NOT     -> "NOT"
+
+  | DOT         -> "DOT"        | BAR       -> "BAR"
+  | LBRACKET    -> "LBRACKET"   | RBRACKET  -> "RBRACKET"
+
+  | IF      -> "IF"
+  | ELSE    -> "ELSE"
+  | FOR     -> "FOR"
+  | WHILE   -> "WHILE"
+  | RETURN  -> "RETURN"
+  | DEF     -> "DEF"
+
+  | INT     -> "INT"    | FLOAT     -> "FLOAT"
+  | BOOL    -> "BOOL"   | VOID      -> "VOID"
+  | TRUE    -> "TRUE"   | FALSE     -> "FALSE"
+  | NULL    -> "NULL"   | ORDER     -> "ORDER"
+  | STOCK   -> "STOCK"  | PORTFOLIO -> "PORTFOLIO"
+  | STRUCT  -> "STRUCT" | ARRAY     -> "ARRAY"
+  | STRING  -> "STRING"
+
+  | INT_LITERAL(i)      -> "INT_LITERAL"
+  | FLOAT_LITERAL(f)    -> "FLOAT_LITERAL"
+  | ID(id)              -> "ID"
+  | STRING_LITERAL(str) -> "STRING_LITERAL"
+  | EOF                 -> "EOF"

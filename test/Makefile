@@ -8,11 +8,14 @@ test: build
 	@./parser_test.sh
 	@./compiler_test.sh
 
+scanner: build
+	./scanner_test.sh
+
 build:
 	@echo Building tests and necessary files.
 	@cd ../compiler; make > /dev/null
-	@cd scanner; make > /dev/null
-	@cd parser; make > /dev/null
+#	@cd scanner; make > /dev/null
+#	@cd parser; make > /dev/null
 
 .PHONY: clean
 clean:
