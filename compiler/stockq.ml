@@ -9,10 +9,8 @@ let _ =
                               ("-l",LLVM_IR)] (* Generate LLVM, don't check *)
   else Compile in
   let lexbuf = Lexing.from_channel stdin in
-  let ast = Parser.program Scanner.token lexbuf in
-  Semant.check ast;
   match action with
-    | Tokenize ->
+    | Tokenize -> 
         let rec print_tokens = function
           | Parser.EOF -> print_endline ""
           | token ->
@@ -20,8 +18,17 @@ let _ =
               print_tokens (Scanner.token lexbuf)
         in
         print_tokens (Scanner.token lexbuf)
-    | Ast -> print_string (Utils.string_of_program [] ast)
-    | LLVM_IR -> print_string (Llvm.string_of_llmodule (Codegen.translate ast))
-    | Compile -> let m = Codegen.translate ast in
-      Llvm_analysis.assert_valid_module m;
-      print_string (Llvm.string_of_llmodule m)
+    | Parserize ->
+        let ast = Parser.program Scanner.token lexbuf in
+        let result = Utils.string_of_program [] ast in
+        print_endline result
+    | _ ->
+        let ast = Parser.program Scanner.token lexbuf in
+        Semant.check ast;
+        match action with
+          | Ast -> print_string (Utils.string_of_program [] ast)
+          | LLVM_IR -> print_string (Llvm.string_of_llmodule (Codegen.translate ast))
+          | Compile -> let m = Codegen.translate ast in
+            Llvm_analysis.assert_valid_module m;
+            print_string (Llvm.string_of_llmodule m)
+          | _ -> ()

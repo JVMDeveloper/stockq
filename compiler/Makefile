@@ -23,7 +23,7 @@ clean:
 
 # More detailed: build using ocamlc/ocamlopt + ocamlfind to locate LLVM
 
-OBJS = ast.cmx utils.cmx codegen.cmx parser.cmx scanner.cmx semant.cmx processor.cmx stockq.cmx
+OBJS = ast.cmx utils.cmx codegen.cmx parser.cmx scanner.cmx semant.cmx stockq.cmx
 
 stockq: $(OBJS)
 	ocamlfind ocamlopt -linkpkg -package llvm -package llvm.analysis $(OBJS) -o stockq
@@ -50,8 +50,6 @@ utils.cmo: parser.cmo ast.cmo
 utils.cmx: parser.cmx ast.cmx
 codegen.cmo: ast.cmo
 codegen.cmx: ast.cmx
-processor.cmo: semant.cmo scanner.cmo parser.cmi codegen.cmo ast.cmo utils.cmo
-processor.cmx: semant.cmx scanner.cmx parser.cmx codegen.cmx ast.cmx utils.cmx
 stockq.cmo: semant.cmo scanner.cmo parser.cmi codegen.cmo ast.cmo utils.cmo
 stockq.cmx: semant.cmx scanner.cmx parser.cmx codegen.cmx ast.cmx utils.cmx
 parser.cmo: ast.cmo parser.cmi

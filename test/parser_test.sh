@@ -10,7 +10,7 @@ printf "${CYAN}Running parser tests...\n${NC}"
 
 for input_file in $INPUT_FILES; do
     output_file=${input_file/.in/.out}
-    parser/parserize < $input_file | cmp -s $output_file -
+    ../compiler/stockq -p < $input_file | cmp -s $output_file -
     if [ "$?" -eq 0 ]; then
         printf "%-65s ${GREEN}SUCCESS\n${NC}" "  - checking $input_file..."
     else

@@ -88,11 +88,10 @@ let rec string_of_stmt = function
 (* let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n" *)
 
 let rec string_of_func func =
-  "FUNCTION " ^ func.fname ^ " (" ^
-  String.concat ", " (List.map snd func.formals) ^ ") " ^
-  "returns " ^ string_of_datatype func.ftype ^ "\n{\n\t" ^
+  "def " ^ string_of_datatype func.ftype ^ " " ^ func.fname ^ " (" ^
+  String.concat ", " (List.map snd func.formals) ^ ") {\n\t" ^
   String.concat "\n\t" (List.map string_of_stmt func.body) ^
-  "\n}\n"
+  "\n}"
 
 let rec string_of_program stor = function
   | ([], [])         -> String.concat "\n" (List.rev stor) ^ "\n"
