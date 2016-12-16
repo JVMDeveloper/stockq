@@ -1,0 +1,5 @@
+def int foo (int a) {
+    print (a + 3);
+}
+
+foo(40);

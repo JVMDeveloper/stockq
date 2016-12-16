@@ -1,0 +1,8 @@
+def int foo( bool i ) {
+    int i; /* should hide the formal i */
+
+    i = 42;
+    print( i + 1 );
+}
+
+foo ( true );
