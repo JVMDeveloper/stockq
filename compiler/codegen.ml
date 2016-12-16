@@ -24,6 +24,16 @@ let translate (functions, stmts) =
     | _ -> i32_t
   in
 
+  let ast_type_of_datatype = function
+    | A.Primitive(p)    -> p
+    | A.Arraytype(p, i) -> p
+  in
+
+  let type_of_datatype = function
+    | A.Primitive(p)    -> ltype_of_typ p
+    | A.Arraytype(p, i) -> ltype_of_typ p
+  in
+
   (* Declare printf(), which the print built-in function will call *)
   let printf_t = L.var_arg_function_type i32_t [| L.pointer_type i8_t |] in
   let printf_func = L.declare_function "printf" printf_t the_module in
@@ -31,9 +41,9 @@ let translate (functions, stmts) =
   let function_decls =
     let function_decl m fdecl =
       let name = fdecl.A.fname and formal_types =
-        Array.of_list (List.map (fun (t, _) -> ltype_of_typ t) fdecl.A.formals)
+        Array.of_list (List.map (fun (t, _) -> type_of_datatype t(* ltype_of_typ t *)) fdecl.A.formals)
       in
-      let ftype = L.function_type (ltype_of_typ fdecl.A.typ) formal_types
+      let ftype = L.function_type (type_of_datatype fdecl.A.ftype (* ltype_of_typ fdecl.A.ftype *)) formal_types
       in
       StringMap.add name (L.define_function name ftype the_module, fdecl) m
     in
@@ -72,7 +82,7 @@ let translate (functions, stmts) =
           StringMap.empty
         else
           let add_formal m (t, n) p = L.set_value_name n p;
-            let local = L.build_alloca (ltype_of_typ t) n builder in
+            let local = L.build_alloca (type_of_datatype t (*ltype_of_typ t*)) n builder in
             ignore (L.build_store p local builder);
             StringMap.add n local m
           in
@@ -81,7 +91,7 @@ let translate (functions, stmts) =
       in
 
       let add_local m (t, n) =
-        let local_var = L.build_alloca (ltype_of_typ t) n builder
+        let local_var = L.build_alloca (type_of_datatype t (*ltype_of_typ t*)) n builder
         in StringMap.add n local_var m
       in
 
@@ -167,7 +177,7 @@ let translate (functions, stmts) =
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
           let actuals = List.rev (List.map (exprgen builder) (List.rev act)) in
-          let result = (match fdecl.A.typ with A.Void -> ""
+          let result = (match (ast_type_of_datatype fdecl.A.ftype) with A.Void -> ""
                                              | _ -> f ^ "_result")
           in L.build_call fdef (Array.of_list actuals) result builder
       | A.Noexpr -> L.const_int i32_t 0
@@ -183,7 +193,7 @@ let translate (functions, stmts) =
     let rec stmtgen builder = function
       | A.Block sl -> List.fold_left stmtgen builder sl
       | A.Expr e -> ignore(exprgen builder e); builder
-      | A.Return e -> ignore (match fdecl.A.typ with
+      | A.Return e -> ignore (match (ast_type_of_datatype fdecl.A.ftype) with
         | A.Void -> L.build_ret_void builder
         | _ -> L.build_ret (exprgen builder e) builder); builder
 
@@ -234,12 +244,12 @@ let translate (functions, stmts) =
       ignore(L.build_ret (L.const_int i32_t 0) builder);
     else
       let builder = List.fold_left stmtgen builder fdecl.A.body in
-      add_terminal builder (match fdecl.A.typ with
+      add_terminal builder (match (ast_type_of_datatype fdecl.A.ftype) with
         | A.Void -> L.build_ret_void
         | t -> L.build_ret (L.const_int (ltype_of_typ t) 0));
   in
 
   List.iter build_function_body functions;
-  let mainfdecl = A.{ typ = A.Int; fname = main_func_name; formals = []; body = [] } in
+  let mainfdecl = A.{ ftype = A.Primitive(A.Int); fname = main_func_name; formals = []; body = [] } in
   build_function_body mainfdecl;
   the_module

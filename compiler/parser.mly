@@ -49,9 +49,9 @@ stmt_list:
 
 
 fdecl:
-    DEF typ ID LPAREN formals_opt RPAREN LBRACE stmt_list RBRACE
+    DEF datatype ID LPAREN formals_opt RPAREN LBRACE stmt_list RBRACE
     { {
-        typ = $2;
+        ftype = $2;
         fname = $3;
         formals = $5;
         body = List.rev $8
@@ -62,10 +62,21 @@ formals_opt:
 |   formal_list     { List.rev $1 }
 
 formal_list:
-    typ ID                      { [($1, $2)] }
-|   formal_list COMMA typ ID    { ($3, $4) :: $1 }
+    datatype ID                     { [($1, $2)] }
+|   formal_list COMMA datatype ID   { ($3, $4) :: $1 }
 
-typ:
+datatype:
+  | primitive   { Primitive($1) }
+  | array_type  { $1 }
+
+array_type:
+    primitive LBRACKET brackets RBRACKET { Arraytype($1, $3) }
+
+brackets:
+    /* nothing */               { 1 }
+  | brackets RBRACKET LBRACKET  { $1 + 1 }
+
+primitive:
     INT         { Int }
 |   FLOAT       { Float }
 |   BOOL        { Bool }
@@ -88,8 +99,8 @@ stmt:
 |   FOR LPAREN expr_opt SEMI expr SEMI expr_opt RPAREN stmt
         { For($3, $5, $7, $9) }
 |   WHILE LPAREN expr RPAREN stmt   { While($3, $5) }
-|   typ ID SEMI                     { Local($1, $2, Noexpr) }
-|   typ ID ASSIGN expr SEMI         { Local($1, $2, $4) }
+|   datatype ID SEMI                     { Local($1, $2, Noexpr) }
+|   datatype ID ASSIGN expr SEMI         { Local($1, $2, $4) }
 
 expr_opt:
     /* nothing */   { Noexpr }
@@ -125,7 +136,6 @@ expr:
 |   ID ASSIGN   expr    { Assign($1, $3) }
 |   ID LPAREN actuals_opt RPAREN    { Call($1, $3) }
 |   LPAREN expr RPAREN  { $2 }
-
 
 actuals_opt:
             /* nothing */   { [] }

@@ -19,7 +19,7 @@ let string_of_uop = function
   | Neg -> "Neg"
   | Not -> "Not"
 
-let string_of_typ = function
+let string_of_primitive = function
   | Int     -> "int"
   | Float   -> "float"
   | Bool    -> "bool"
@@ -30,6 +30,14 @@ let string_of_typ = function
   | String  -> "string"
   | Array   -> "array"
   | Struct  -> "struct"
+
+let rec print_brackets = function
+  | 1 -> "[]"
+  | i -> "[]" ^ print_brackets (i - 1)
+
+let string_of_datatype = function
+  | Primitive(p)    -> string_of_primitive p
+  | Arraytype(p, i) -> (string_of_primitive p) ^ print_brackets i
 
 let rec string_of_expr = function
   | IntLiteral(i)       -> "IntLiteral(" ^ string_of_int i ^ ")"
@@ -64,13 +72,13 @@ let rec string_of_stmt = function
                             string_of_stmt s ^ " }"
   | While(e, s)     ->  "While(" ^ string_of_expr e ^ ") { " ^
                         string_of_stmt s ^ " }"
-  | Local(t, id, e) ->  "Local(" ^ string_of_typ t ^ ", " ^ id ^
+  | Local(dt, id, e) ->  "Local(" ^ string_of_datatype dt ^ ", " ^ id ^
                         ", " ^ string_of_expr e ^ ")"
 
-let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n"
+(* let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n" *)
 
 let rec string_of_func func =
-  "def " ^ string_of_typ func.typ ^ " " ^ func.fname ^ " (" ^
+  "def " ^ string_of_datatype func.ftype ^ " " ^ func.fname ^ " (" ^
   String.concat ", " (List.map snd func.formals) ^ ") {\n\t" ^
   String.concat "\n\t" (List.map string_of_stmt func.body) ^
   "\n}\n"

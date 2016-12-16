@@ -1,4 +1,4 @@
-(* Abstract Syntax Tree and functions for printing it *)
+(* Abstract Syntax Tree for StockQ *)
 
 type op = Add | Sub | Mult | Div | Mod | Equal |
           Addeq | Subeq | Multeq | Diveq | Modeq |
@@ -6,10 +6,14 @@ type op = Add | Sub | Mult | Div | Mod | Equal |
 
 type uop = Neg | Not
 
-type typ = Int | Float | Bool | Void | Stock | Order |
-           Portfolio | String | Array | Struct
+type primitive = Int | Float | Bool | Void | Stock | Order |
+                 Portfolio | String | Array | Struct
 
-type bind = typ * string
+type datatype =
+  | Primitive of primitive
+  | Arraytype of primitive * int
+
+type bind = datatype * string
 
 type expr =
     IntLiteral of int
@@ -30,10 +34,10 @@ type stmt =
   | If of expr * stmt * stmt
   | For of expr * expr * expr * stmt
   | While of expr * stmt
-  | Local of typ * string * expr
+  | Local of datatype * string * expr
 
 type func_decl = {
-	typ : typ;
+	ftype : datatype;
     fname : string;
     formals : bind list;
     body : stmt list;
