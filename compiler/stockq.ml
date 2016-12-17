@@ -24,11 +24,11 @@ let _ =
         print_endline result
     | _ ->
         let ast = Parser.program Scanner.token lexbuf in
-        Semant.check ast;
+        let sast = Analyzer.analyze ast in
         match action with
           | Ast -> print_string (Utils.string_of_program [] ast)
-          | LLVM_IR -> print_string (Llvm.string_of_llmodule (Codegen.translate ast))
-          | Compile -> let m = Codegen.translate ast in
+          | LLVM_IR -> print_string (Llvm.string_of_llmodule (Codegen.translate sast))
+          | Compile -> let m = Codegen.translate sast in
             Llvm_analysis.assert_valid_module m;
             print_string (Llvm.string_of_llmodule m)
           | _ -> ()

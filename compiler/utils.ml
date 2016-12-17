@@ -1,4 +1,5 @@
 open Ast
+open Sast
 open Parser
 
 let string_of_op = function
@@ -45,8 +46,8 @@ let string_of_datatype = function
   | Primitive(p)    -> string_of_primitive p
   | Arraytype(p, i) -> string_of_primitive p ^ print_brackets i
 
-let rec string_of_id = function
-  | Id(s)   -> s
+let string_of_id = function
+  | SId(s)   -> s
   | _       -> ""
 
 let rec string_of_expr = function
@@ -87,7 +88,7 @@ let rec string_of_stmt = function
 
 (* let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n" *)
 
-let rec string_of_func func =
+let string_of_func func =
   "def " ^ string_of_datatype func.ftype ^ " " ^ func.fname ^ " (" ^
   String.concat ", " (List.map snd func.formals) ^ ") {\n\t" ^
   String.concat "\n\t" (List.map string_of_stmt func.body) ^
