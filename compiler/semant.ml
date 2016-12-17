@@ -8,7 +8,9 @@ module StringMap = Map.Make(String)
    throws an exception if something is wrong.
 *)
 
-let check (func_decls, stmts) =
+let check (functions, stmts) =
+
+  let main_func_name = "main" in
 
   (* Raise an exception if the given list has a duplicate *)
   let report_duplicate exceptf list =
@@ -27,12 +29,19 @@ let check (func_decls, stmts) =
 
   (**** Checking Functions ****)
 
-  if List.mem "print" (List.map (fun fd -> fd.fname) func_decls)
+  if List.mem "print" (List.map (fun fd -> fd.fname) functions)
   then raise (Failure ("function print may not be defined")) else ();
 
-  if List.mem "main" (List.map (fun fd -> fd.fname) func_decls)
+  if List.mem main_func_name (List.map (fun fd -> fd.fname) functions)
   then raise (Failure ("function main may not be defined")) else ();
 
   report_duplicate (fun n -> "duplicate function " ^ n)
-    (List.map (fun fd -> fd.fname) func_decls);
+    (List.map (fun fd -> fd.fname) functions);
+
+  (* Function declaration for a named function *)
+
+
+
   ()
+
+

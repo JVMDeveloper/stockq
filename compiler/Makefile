@@ -12,7 +12,9 @@ stockq.native:
 
 .PHONY: test
 test:
-	cd ..; cd test; make
+	@echo Running the test suite!
+	@cd ../test; make > /dev/null
+	@echo All tests passed, directory clean!
 
 .PHONY: clean
 clean:
