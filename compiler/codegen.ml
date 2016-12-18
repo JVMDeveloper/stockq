@@ -8,7 +8,8 @@ let translate (functions, stmts) =
   let context = L.global_context () in
   let the_module = L.create_module context "StockX"
   and i32_t     = L.i32_type    context
-  and i8_t      = L.i8_type     context
+  and i8_t      = L.i8_type     context in
+  let str_t     = L.pointer_type i8_t
   and i1_t      = L.i1_type     context
   and void_t    = L.void_type   context 
   and double_t  = L.double_type context in
@@ -20,6 +21,7 @@ let translate (functions, stmts) =
     | A.Int     -> i32_t
     | A.Float   -> double_t
     | A.Bool    -> i1_t
+    | A.String  -> str_t
     | A.Void    -> void_t
     | _ -> i32_t
   in
@@ -171,7 +173,7 @@ let translate (functions, stmts) =
               | _ -> L.build_global_stringptr "---error---" "" builder
               in boolfunc x
         | _ -> L.build_call printf_func
-                            [| int_format_str; f |]
+                            [| str_format_str; f |]
                             "printf" builder
         in func e
       | A.Call (f, act) ->
