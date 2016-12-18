@@ -173,7 +173,7 @@ let translate (functions, stmts) =
               | _ -> L.build_global_stringptr "---error---" "" builder
               in boolfunc x
         | _ -> L.build_call printf_func
-                            [| str_format_str; f |]
+                            [| int_format_str; f |]
                             "printf" builder
         in func e
       | A.Call (f, act) ->
