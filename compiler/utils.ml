@@ -209,13 +209,20 @@ let type_of_expr func all_funcs =
         let t1 = expr e1
         and t2 = expr e2 in
         (match op with
-          | Add | Sub | Mult | Div when t1 = Int && t2 = Int -> Int
-          | Add | Sub | Mult | Div when t1 = Int && t2 = Float -> Float
-          | Add | Sub | Mult | Div when t1 = Float && t2 = Int -> Float
-          | Add | Sub | Mult | Div when t1 = Float && t2 = Float -> Float
+            | Add | Sub | Mult | Div | Mod when t1 = Int && t2 = Int -> Int
+            | Add | Sub | Mult | Div | Mod when t1 = Int && t2 = Float -> Float
+            | Add | Sub | Mult | Div | Mod when t1 = Float && t2 = Int -> Float
+            | Add | Sub | Mult | Div | Mod when t1 = Float && t2 = Float -> Float
+
+            | Addeq | Subeq | Multeq | Diveq | Modeq when t1 = Int && t2 = Int -> Int
+            | Addeq | Subeq | Multeq | Diveq | Modeq when t1 = Int && t2 = Float -> Float
+            | Addeq | Subeq | Multeq | Diveq | Modeq when t1 = Float && t2 = Int -> Float
+            | Addeq | Subeq | Multeq | Diveq | Modeq when t1 = Float && t2 = Float -> Float
           
           | Equal | Neq when t1 = t2 -> Bool
-          | Less | Leq | Greater | Geq when t1 = Int && t2 = Int -> Bool
+          | Equal | Neq when (t1 = Int && t2 = Float) || (t1 = Float && t2 = Int) -> Bool
+          | Less | Leq | Greater | Geq when t1 = t2 -> Bool
+          | Less | Leq | Greater | Geq when (t1 = Int && t2 = Float) || (t1 = Float && t2 = Int) -> Bool
           | And | Or when t1 = Bool && t2 = Bool -> Bool
           | _ -> raise (Failure ("illegal binary operator " ^
               string_of_primitive t1 ^ " " ^ string_of_op op ^ " " ^

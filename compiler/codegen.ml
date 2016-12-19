@@ -60,6 +60,8 @@ let translate (functions, stmts) =
    * t=0 -> functions, t=1 -> statements
    *)
   let build_function_body fdecl =
+
+    let type_of_expr e = U.type_of_expr fdecl functions e in
     let the_function =
       if fdecl.A.fname = main_func_name then
         let fty = L.function_type i32_t [| |] in
@@ -119,37 +121,72 @@ let translate (functions, stmts) =
       | A.Id s -> L.build_load (lookup s) s builder
       | A.Binop (e1, op, e2) ->
         let e1' = exprgen builder e1
-        and e2' = exprgen builder e2 in
+        and e2' = exprgen builder e2
+        and t1 = type_of_expr e1
+        and t2 = type_of_expr e2 in
+        let e1' = if t1 = Int && t2 = Float then
+                    (L.const_sitofp e1' double_t)
+                  else e1'
+        and e2' = if t1 = Float && t2 = Int then
+                    (L.const_sitofp e2' double_t)
+                  else e2'
+        in
         (match op with
-          | A.Add     -> L.build_add    e1' e2' "tmp" builder
-          | A.Sub     -> L.build_sub    e1' e2' "tmp" builder
-          | A.Mult    -> L.build_mul    e1' e2' "tmp" builder
-          | A.Div     -> L.build_sdiv   e1' e2' "tmp" builder
-          | A.Mod     -> L.build_srem   e1' e2' "tmp" builder
-          | A.And     -> L.build_and    e1' e2' "tmp" builder
-          | A.Or      -> L.build_or     e1' e2' "tmp" builder
-          | A.Equal   -> L.build_icmp L.Icmp.Eq     e1' e2' "tmp" builder
-          | A.Neq     -> L.build_icmp L.Icmp.Ne     e1' e2' "tmp" builder
-          | A.Less    -> L.build_icmp L.Icmp.Slt    e1' e2' "tmp" builder
-          | A.Leq     -> L.build_icmp L.Icmp.Sle    e1' e2' "tmp" builder
-          | A.Greater -> L.build_icmp L.Icmp.Sgt    e1' e2' "tmp" builder
-          | A.Geq     -> L.build_icmp L.Icmp.Sge    e1' e2' "tmp" builder
+          (* | A.Add     -> L.build_add    e1' e2' "tmp" builder *)
+          | Add when t1 = Float || t2 = Float -> L.build_fadd e1' e2' "tmp" builder
+          | Add when t1 = Int && t2 = Int -> L.build_add e1' e2' "tmp" builder
 
-          | A.Addeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Add, e2)))
-          | A.Subeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Sub, e2)))
-          | A.Multeq  -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Mult, e2)))
-          | A.Diveq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Div, e2)))
-          | A.Modeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Mod, e2)))
+          | Sub when t1 = Float || t2 = Float -> L.build_fsub e1' e2' "tmp" builder
+          | Sub when t1 = Int && t2 = Int -> L.build_sub e1' e2' "tmp" builder
+
+          | Mult when t1 = Float || t2 = Float -> L.build_fmul e1' e2' "tmp" builder
+          | Mult when t1 = Int && t2 = Int -> L.build_mul e1' e2' "tmp" builder
+
+          | Div when t1 = Float || t2 = Float -> L.build_fdiv e1' e2' "tmp" builder
+          | Div when t1 = Int && t2 = Int -> L.build_sdiv e1' e2' "tmp" builder
+
+          | Mod when t1 = Float || t2 = Float -> L.build_frem e1' e2' "tmp" builder
+          | Mod when t1 = Int && t2 = Int -> L.build_srem e1' e2' "tmp" builder
+
+          | And     -> L.build_and    e1' e2' "tmp" builder
+          | Or      -> L.build_or     e1' e2' "tmp" builder
+
+          | Equal when t1 = Float || t2 = Float -> L.build_fcmp L.Fcmp.Ueq e1' e2' "tmp" builder
+          | Equal   -> L.build_icmp L.Icmp.Eq     e1' e2' "tmp" builder
+
+          | Neq when t1 = Float || t2 = Float -> L.build_fcmp L.Fcmp.Une e1' e2' "tmp" builder
+          | Neq     -> L.build_icmp L.Icmp.Ne     e1' e2' "tmp" builder
+
+          | Less when t1 = Float || t2 = Float -> L.build_fcmp L.Fcmp.Ult e1' e2' "tmp" builder
+          | Less when t1 = Int && t2 = Int -> L.build_icmp L.Icmp.Slt e1' e2' "tmp" builder
+
+          | Leq when t1 = Float || t2 = Float -> L.build_fcmp L.Fcmp.Ule e1' e2' "tmp" builder
+          | Leq when t1 = Int && t2 = Int -> L.build_icmp L.Icmp.Sle e1' e2' "tmp" builder
+
+          | Greater when t1 = Float || t2 = Float -> L.build_fcmp L.Fcmp.Ugt e1' e2' "tmp" builder
+          | Greater when t1 = Int && t2 = Int -> L.build_icmp L.Icmp.Sgt e1' e2' "tmp" builder
+
+          | Geq when t1 = Float || t2 = Float -> L.build_fcmp L.Fcmp.Uge e1' e2' "tmp" builder
+          | Geq when t1 = Int && t2 = Int -> L.build_icmp L.Icmp.Sge e1' e2' "tmp" builder
+
+          | Addeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Add, e2)))
+          | Subeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Sub, e2)))
+          | Multeq  -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Mult, e2)))
+          | Diveq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Div, e2)))
+          | Modeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Mod, e2)))
         )
-      | A.Unop (uop, e) -> let e' = exprgen builder e in
+      | A.Unop (uop, e) -> let e' = exprgen builder e
+                           and t = type_of_expr e in
           (match uop with
-            | A.Neg   -> L.build_neg
-            | A.Not   -> L.build_not
+            | Neg when t = Int -> L.build_neg
+            | Neg when t = Float -> L.build_fneg
+
+            | Not   -> L.build_not
           ) e' "tmp" builder
       | A.Assign (s, e) -> let e' = exprgen builder e in
                            ignore (L.build_store e' (lookup s) builder); e'
       | A.Call ("print", [e]) -> 
-          (match (U.type_of_expr fdecl functions e) with
+          (match (type_of_expr e) with
             | A.Int -> L.build_call printf_func [| int_format_str;
                             (exprgen builder e) |] "printf" builder
             | A.Float -> L.build_call printf_func [| float_format_str;

@@ -116,14 +116,22 @@ let check (functions, stmts) =
           and t2 = expr e2 in
           (match op with
             (* ops on Int/Float *)
-            | Add | Sub | Mult | Div when t1 = Int && t2 = Int -> Int
-            | Add | Sub | Mult | Div when t1 = Int && t2 = Float -> Float
-            | Add | Sub | Mult | Div when t1 = Float && t2 = Int -> Float
-            | Add | Sub | Mult | Div when t1 = Float && t2 = Float -> Float
+            | Add | Sub | Mult | Div | Mod when t1 = Int && t2 = Int -> Int
+            | Add | Sub | Mult | Div | Mod when t1 = Int && t2 = Float -> Float
+            | Add | Sub | Mult | Div | Mod when t1 = Float && t2 = Int -> Float
+            | Add | Sub | Mult | Div | Mod when t1 = Float && t2 = Float -> Float
+
+            | Addeq | Subeq | Multeq | Diveq | Modeq when t1 = Int && t2 = Int -> Int
+            | Addeq | Subeq | Multeq | Diveq | Modeq when t1 = Int && t2 = Float -> Float
+            | Addeq | Subeq | Multeq | Diveq | Modeq when t1 = Float && t2 = Int -> Float
+            | Addeq | Subeq | Multeq | Diveq | Modeq when t1 = Float && t2 = Float -> Float
             
             (* ops on Bools *)
             | Equal | Neq when t1 = t2 -> Bool
-            | Less | Leq | Greater | Geq when t1 = Int && t2 = Int -> Bool
+            | Equal | Neq when (t1 = Int && t2 = Float) || (t1 = Float && t2 = Int) -> Bool
+            | Less | Leq | Greater | Geq when t1 = t2 -> Bool
+            | Less | Leq | Greater | Geq when (t1 = Int && t2 = Float) || (t1 = Float && t2 = Int) -> Bool
+
             | And | Or when t1 = Bool && t2 = Bool -> Bool
             | _ -> raise (Failure ("illegal binary operator " ^
                 U.string_of_primitive t1 ^ " " ^ U.string_of_op op ^ " " ^
