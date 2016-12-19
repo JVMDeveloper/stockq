@@ -16,17 +16,25 @@ let char = ''' ( ascii | digit ) '''
 let string = '"' ((ascii)* as s) '"'
 let id = alpha (alpha | digit | '_')*
 
+
 rule token = parse
-  whitespace    { token lexbuf } (* white space *)
+
+(* white space *)
+| whitespace    { token lexbuf }
+
+(* comments *)
 | "/*"          { comment lexbuf }
 | "//"          { line_comment lexbuf }
 
-| '('           { LPAREN }
-| ')'           { RPAREN }
-| '{'           { LBRACE }
-| '}'           { RBRACE }
-| ';'           { SEMI }
-| ','           { COMMA }
+(* symbols *)
+| '('       { LPAREN }
+| ')'       { RPAREN }
+| '{'       { LBRACE }
+| '}'       { RBRACE }
+| '['       { LBRACKET }
+| ']'       { RBRACKET }
+| ';'       { SEMI }
+| ','       { COMMA }
 
 (* operators *)
 | '+'       { PLUS }
@@ -49,34 +57,31 @@ rule token = parse
 | "and"     { AND }
 | "or"      { OR }
 | "not"     { NOT }
-| '.'       { DOT }
-| '['       { LBRACKET }
-| ']'       { RBRACKET }
+| "true"    { TRUE }
+| "false"   { FALSE }
 
 (* branch control *)
 | "if"      { IF }
 | "else"    { ELSE }
 | "for"     { FOR }
 | "while"   { WHILE }
+
+(* function operation *)
 | "return"  { RETURN }
 | "def"     { DEF }
 
-(* Data Types *)
+(* primitives *)
 | "int"     { INT }
 | "float"   { FLOAT }
 | "bool"    { BOOL }
+| "string"  { STRING }
 | "void"    { VOID }
-| "null"    { NULL }
-| "true"    { TRUE }
-| "false"   { FALSE }
-| "stock"   { STOCK }
-| "order"   { ORDER }
-| "portfolio"   { PORTFOLIO }
+
+(* data types *)
 | "struct"  { STRUCT }
 | "array"   { ARRAY }
-| "string"  { STRING }
 
-(* Literals *)
+(* literals *)
 | int as lxm        { INT_LITERAL(int_of_string lxm) }
 | float as lxm      { FLOAT_LITERAL(float_of_string lxm) }
 | id as lxm         { ID(lxm) }

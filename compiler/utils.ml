@@ -126,7 +126,6 @@ let string_of_token = function
   | AND     -> "AND"    | OR        -> "OR"
   | NOT     -> "NOT"
 
-  | DOT         -> "DOT"        | BAR       -> "BAR"
   | LBRACKET    -> "LBRACKET"   | RBRACKET  -> "RBRACKET"
 
   | IF      -> "IF"
@@ -139,8 +138,6 @@ let string_of_token = function
   | INT     -> "INT"    | FLOAT     -> "FLOAT"
   | BOOL    -> "BOOL"   | VOID      -> "VOID"
   | TRUE    -> "TRUE"   | FALSE     -> "FALSE"
-  | NULL    -> "NULL"   | ORDER     -> "ORDER"
-  | STOCK   -> "STOCK"  | PORTFOLIO -> "PORTFOLIO"
   | STRUCT  -> "STRUCT" | ARRAY     -> "ARRAY"
   | STRING  -> "STRING"
 
