@@ -48,7 +48,7 @@ let string_of_datatype = function
   | Primitive(p)    -> string_of_primitive p
   | Arraytype(p, i) -> string_of_primitive p ^ print_brackets i
 
-let rec string_of_id = function
+let string_of_id = function
   | Id(s)   -> s
   | _       -> ""
 
@@ -90,7 +90,7 @@ let rec string_of_stmt = function
 
 (* let string_of_vdecl (t, id) = string_of_typ t ^ " " ^ id ^ ";\n" *)
 
-let rec string_of_func func =
+let string_of_func func =
   "def " ^ string_of_datatype func.ftype ^ " " ^ func.fname ^ " (" ^
   String.concat ", " (List.map snd func.formals) ^ ") {\n\t" ^
   String.concat "\n\t" (List.map string_of_stmt func.body) ^
@@ -141,10 +141,10 @@ let string_of_token = function
   | STRUCT  -> "STRUCT" | ARRAY     -> "ARRAY"
   | STRING  -> "STRING"
 
-  | INT_LITERAL(i)      -> "INT_LITERAL"
-  | FLOAT_LITERAL(f)    -> "FLOAT_LITERAL"
-  | ID(id)              -> "ID"
-  | STRING_LITERAL(str) -> "STRING_LITERAL"
+  | INT_LITERAL _       -> "INT_LITERAL"
+  | FLOAT_LITERAL _     -> "FLOAT_LITERAL"
+  | ID _                -> "ID"
+  | STRING_LITERAL _    -> "STRING_LITERAL"
   | EOF                 -> "EOF"
 
 (* returns ast type of expr *)
@@ -156,7 +156,7 @@ let type_of_expr func all_funcs =
 
   let prim_of_dt = function
     | Primitive(p)      -> p
-    | Arraytype(p, i)   -> p
+    | Arraytype(p, _)   -> p
   in
 
   let print_type = Primitive(Int) in
@@ -178,8 +178,8 @@ let type_of_expr func all_funcs =
   let locals =
     let rec get_locals mylocals = function
       | [] -> mylocals
-      | [Local (t, s, e)] -> get_locals [(t, s)] []
-      | Local (t, s, e) :: r -> get_locals ((t, s) :: mylocals) r
+      | [Local (t, s, _)] -> get_locals [(t, s)] []
+      | Local (t, s, _) :: r -> get_locals ((t, s) :: mylocals) r
       | _ :: r -> get_locals mylocals r
     in
     get_locals [] func.body

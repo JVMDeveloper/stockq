@@ -1,5 +1,6 @@
+open Ast
+
 module L = Llvm
-module A = Ast
 module U = Utils
 
 module StringMap = Map.Make(String)
@@ -18,22 +19,22 @@ let translate (functions, stmts) =
   let main_func_name = "main" in
 
   let ltype_of_typ = function
-    | A.Int     -> i32_t
-    | A.Float   -> double_t
-    | A.Bool    -> i1_t
-    | A.String  -> str_t
-    | A.Void    -> void_t
+    | Int     -> i32_t
+    | Float   -> double_t
+    | Bool    -> i1_t
+    | String  -> str_t
+    | Void    -> void_t
     | _ -> i32_t
   in
 
   let ast_type_of_datatype = function
-    | A.Primitive(p)    -> p
-    | A.Arraytype(p, i) -> p
+    | Primitive(p)    -> p
+    | Arraytype(p, _) -> p
   in
 
   let type_of_datatype = function
-    | A.Primitive(p)    -> ltype_of_typ p
-    | A.Arraytype(p, i) -> ltype_of_typ p
+    | Primitive(p)    -> ltype_of_typ p
+    | Arraytype(p, _) -> ltype_of_typ p
   in
 
   (* Declare printf(), which the print built-in function will call *)
@@ -42,10 +43,10 @@ let translate (functions, stmts) =
 
   let function_decls =
     let function_decl m fdecl =
-      let name = fdecl.A.fname and formal_types =
-        Array.of_list (List.map (fun (t, _) -> type_of_datatype t) fdecl.A.formals)
+      let name = fdecl.fname and formal_types =
+        Array.of_list (List.map (fun (t, _) -> type_of_datatype t) fdecl.formals)
       in
-      let ftype = L.function_type (type_of_datatype fdecl.A.ftype) formal_types
+      let ftype = L.function_type (type_of_datatype fdecl.ftype) formal_types
       in
       StringMap.add name (L.define_function name ftype the_module, fdecl) m
     in
@@ -63,12 +64,12 @@ let translate (functions, stmts) =
 
     let type_of_expr e = U.type_of_expr fdecl functions e in
     let the_function =
-      if fdecl.A.fname = main_func_name then
+      if fdecl.fname = main_func_name then
         let fty = L.function_type i32_t [| |] in
         L.define_function "main" fty the_module
       else
         let get_1_2 (a, _) = a in
-        get_1_2 (StringMap.find fdecl.A.fname function_decls)
+        get_1_2 (StringMap.find fdecl.fname function_decls)
     in
 
     let builder = L.builder_at_end context (L.entry_block the_function) in
@@ -82,7 +83,7 @@ let translate (functions, stmts) =
     let local_vars =
       (* get formals first, if this is a function decl *)
       let formals =
-        if fdecl.A.fname = main_func_name then
+        if fdecl.fname = main_func_name then
           StringMap.empty
         else
           let add_formal m (t, n) p = L.set_value_name n p;
@@ -90,7 +91,7 @@ let translate (functions, stmts) =
             ignore (L.build_store p local builder);
             StringMap.add n local m
           in
-          List.fold_left2 add_formal StringMap.empty fdecl.A.formals
+          List.fold_left2 add_formal StringMap.empty fdecl.formals
             (Array.to_list (L.params the_function))
       in
 
@@ -101,12 +102,12 @@ let translate (functions, stmts) =
 
       let rec get_locals mylocals = function
         | [] -> mylocals
-        | [A.Local (t, s, e)] -> get_locals [(t, s)] []
-        | A.Local (t, s, e) :: r -> get_locals ((t, s) :: mylocals) r
+        | [Local (t, s, _)] -> get_locals [(t, s)] []
+        | Local (t, s, _) :: r -> get_locals ((t, s) :: mylocals) r
         | _ :: r -> get_locals mylocals r
       in
       List.fold_left add_local formals
-        (get_locals [] (if fdecl.A.fname = main_func_name then stmts else fdecl.A.body))
+        (get_locals [] (if fdecl.fname = main_func_name then stmts else fdecl.body))
     in
 
     (* return the value for a variable *)
@@ -114,12 +115,12 @@ let translate (functions, stmts) =
 
     (* Construct code for expressions in a function *)
     let rec exprgen builder = function
-      | A.IntLiteral i -> L.const_int i32_t i
-      | A.FloatLiteral f -> L.const_float double_t f
-      | A.StringLiteral str -> L.build_global_stringptr str "" builder
-      | A.BoolLiteral b -> L.const_int i1_t (if b then 1 else 0)
-      | A.Id s -> L.build_load (lookup s) s builder
-      | A.Binop (e1, op, e2) ->
+      | IntLiteral i -> L.const_int i32_t i
+      | FloatLiteral f -> L.const_float double_t f
+      | StringLiteral str -> L.build_global_stringptr str "" builder
+      | BoolLiteral b -> L.const_int i1_t (if b then 1 else 0)
+      | Id s -> L.build_load (lookup s) s builder
+      | Binop (e1, op, e2) ->
         let e1' = exprgen builder e1
         and e2' = exprgen builder e2
         and t1 = type_of_expr e1
@@ -132,7 +133,6 @@ let translate (functions, stmts) =
                   else e2'
         in
         (match op with
-          (* | A.Add     -> L.build_add    e1' e2' "tmp" builder *)
           | Add when t1 = Float || t2 = Float -> L.build_fadd e1' e2' "tmp" builder
           | Add when t1 = Int && t2 = Int -> L.build_add e1' e2' "tmp" builder
 
@@ -169,43 +169,44 @@ let translate (functions, stmts) =
           | Geq when t1 = Float || t2 = Float -> L.build_fcmp L.Fcmp.Uge e1' e2' "tmp" builder
           | Geq when t1 = Int && t2 = Int -> L.build_icmp L.Icmp.Sge e1' e2' "tmp" builder
 
-          | Addeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Add, e2)))
-          | Subeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Sub, e2)))
-          | Multeq  -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Mult, e2)))
-          | Diveq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Div, e2)))
-          | Modeq   -> exprgen builder (A.Assign((U.string_of_id e1), A.Binop(e1, A.Mod, e2)))
+          | Addeq   -> exprgen builder (Assign((U.string_of_id e1), Binop(e1, Add, e2)))
+          | Subeq   -> exprgen builder (Assign((U.string_of_id e1), Binop(e1, Sub, e2)))
+          | Multeq  -> exprgen builder (Assign((U.string_of_id e1), Binop(e1, Mult, e2)))
+          | Diveq   -> exprgen builder (Assign((U.string_of_id e1), Binop(e1, Div, e2)))
+          | Modeq   -> exprgen builder (Assign((U.string_of_id e1), Binop(e1, Mod, e2)))
+          
+          | _ -> exprgen builder Noexpr
         )
-      | A.Unop (uop, e) -> let e' = exprgen builder e
+      | Unop (uop, e) -> let e' = exprgen builder e
                            and t = type_of_expr e in
           (match uop with
-            | Neg when t = Int -> L.build_neg
             | Neg when t = Float -> L.build_fneg
-
+            | Neg   -> L.build_neg
             | Not   -> L.build_not
           ) e' "tmp" builder
-      | A.Assign (s, e) -> let e' = exprgen builder e in
+      | Assign (s, e) -> let e' = exprgen builder e in
                            ignore (L.build_store e' (lookup s) builder); e'
-      | A.Call ("print", [e]) -> 
+      | Call ("print", [e]) -> 
           (match (type_of_expr e) with
-            | A.Int -> L.build_call printf_func [| int_format_str;
+            | Int -> L.build_call printf_func [| int_format_str;
                             (exprgen builder e) |] "printf" builder
-            | A.Float -> L.build_call printf_func [| float_format_str;
+            | Float -> L.build_call printf_func [| float_format_str;
                             (exprgen builder e) |] "printf" builder
-            | A.String -> L.build_call printf_func [| str_format_str;
+            | String -> L.build_call printf_func [| str_format_str;
                             (exprgen builder e) |] "printf" builder
-            | A.Bool -> L.build_call printf_func [| int_format_str;
+            | Bool -> L.build_call printf_func [| int_format_str;
                             (exprgen builder e) |] "printf" builder
             | _ -> L.build_call printf_func [| int_format_str;
                         (exprgen builder e) |] "printf" builder
           )
 
-      | A.Call (f, act) ->
+      | Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
           let actuals = List.rev (List.map (exprgen builder) (List.rev act)) in
-          let result = (match (ast_type_of_datatype fdecl.A.ftype) with A.Void -> ""
+          let result = (match (ast_type_of_datatype fdecl.ftype) with Void -> ""
                                              | _ -> f ^ "_result")
           in L.build_call fdef (Array.of_list actuals) result builder
-      | A.Noexpr -> L.const_int i32_t 0
+      | Noexpr -> L.const_int i32_t 0
     in
     
     let add_terminal builder f =
@@ -216,13 +217,13 @@ let translate (functions, stmts) =
 
     (* build the statements in a function *)
     let rec stmtgen builder = function
-      | A.Block sl -> List.fold_left stmtgen builder sl
-      | A.Expr e -> ignore(exprgen builder e); builder
-      | A.Return e -> ignore (match (ast_type_of_datatype fdecl.A.ftype) with
-        | A.Void -> L.build_ret_void builder
+      | Block sl -> List.fold_left stmtgen builder sl
+      | Expr e -> ignore(exprgen builder e); builder
+      | Return e -> ignore (match (ast_type_of_datatype fdecl.ftype) with
+        | Void -> L.build_ret_void builder
         | _ -> L.build_ret (exprgen builder e) builder); builder
 
-      | A.If (e, s1, s2) ->
+      | If (e, s1, s2) ->
         let bool_val = exprgen builder e in
         let merge_bb = L.append_block context "merge" the_function in
 
@@ -237,9 +238,9 @@ let translate (functions, stmts) =
         ignore (L.build_cond_br bool_val then_bb else_bb builder);
         L.builder_at_end context merge_bb
 
-      | A.For (e1, e2, e3, s) -> stmtgen builder
-          ( A.Block [A.Expr e1 ; A.While (e2, A.Block [s ; A.Expr e3]) ] )
-      | A.While (e, s) ->
+      | For (e1, e2, e3, s) -> stmtgen builder
+          ( Block [Expr e1 ; While (e2, Block [s ; Expr e3]) ] )
+      | While (e, s) ->
         let pred_bb = L.append_block context "while" the_function
         in
         ignore (L.build_br pred_bb builder);
@@ -259,22 +260,22 @@ let translate (functions, stmts) =
         ignore (L.build_cond_br bool_val body_bb merge_bb pred_builder);
         L.builder_at_end context merge_bb
       
-      | A.Local (t, s, e) -> (match e with
-        | A.Noexpr -> builder
-        | _ -> ignore(exprgen builder (A.Assign(s, e))); builder)
+      | Local (_, s, e) -> (match e with
+        | Noexpr -> builder
+        | _ -> ignore(exprgen builder (Assign(s, e))); builder)
     in
 
-    if fdecl.A.fname = main_func_name then
+    if fdecl.fname = main_func_name then
       let builder = List.fold_left stmtgen builder stmts in
       ignore(L.build_ret (L.const_int i32_t 0) builder);
     else
-      let builder = List.fold_left stmtgen builder fdecl.A.body in
-      add_terminal builder (match (ast_type_of_datatype fdecl.A.ftype) with
-        | A.Void -> L.build_ret_void
+      let builder = List.fold_left stmtgen builder fdecl.body in
+      add_terminal builder (match (ast_type_of_datatype fdecl.ftype) with
+        | Void -> L.build_ret_void
         | t -> L.build_ret (L.const_int (ltype_of_typ t) 0));
   in
 
   List.iter build_function_body functions;
-  let mainfdecl = A.{ ftype = A.Primitive(A.Int); fname = main_func_name; formals = []; body = stmts } in
+  let mainfdecl = { ftype = Primitive(Int); fname = main_func_name; formals = []; body = stmts } in
   build_function_body mainfdecl;
   the_module

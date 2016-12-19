@@ -37,7 +37,7 @@ let check (functions, stmts) =
 
   let prim_of_dt = function
     | Primitive(p)      -> p
-    | Arraytype(p, i)   -> p
+    | Arraytype(p, _)   -> p
   in
 
   (**** Checking Functions ****)
@@ -80,8 +80,8 @@ let check (functions, stmts) =
     let locals =
       let rec get_locals mylocals = function
         | [] -> mylocals
-        | [Local (t, s, e)] -> get_locals [(t, s)] []
-        | Local (t, s, e) :: r -> get_locals ((t, s) :: mylocals) r
+        | [Local (t, s, _)] -> get_locals [(t, s)] []
+        | Local (t, s, _) :: r -> get_locals ((t, s) :: mylocals) r
         | _ :: r -> get_locals mylocals r
       in
       get_locals [] (if func.fname = main_func_name then stmts else func.body)
@@ -209,7 +209,7 @@ let check (functions, stmts) =
       | For(e1, e2, e3, st) -> ignore (expr e1); check_bool_expr e2;
                                ignore (expr e3); stmt st
       | While(p, s) -> check_bool_expr p; stmt s
-      | Local(dt, var, e) ->
+      | Local(_, var, e) ->
           ignore (expr e);
           (match (expr e) with
             | Void -> ()
