@@ -43,9 +43,9 @@ let translate (functions, stmts) =
   let function_decls =
     let function_decl m fdecl =
       let name = fdecl.A.fname and formal_types =
-        Array.of_list (List.map (fun (t, _) -> type_of_datatype t(* ltype_of_typ t *)) fdecl.A.formals)
+        Array.of_list (List.map (fun (t, _) -> type_of_datatype t) fdecl.A.formals)
       in
-      let ftype = L.function_type (type_of_datatype fdecl.A.ftype (* ltype_of_typ fdecl.A.ftype *)) formal_types
+      let ftype = L.function_type (type_of_datatype fdecl.A.ftype) formal_types
       in
       StringMap.add name (L.define_function name ftype the_module, fdecl) m
     in
@@ -84,7 +84,7 @@ let translate (functions, stmts) =
           StringMap.empty
         else
           let add_formal m (t, n) p = L.set_value_name n p;
-            let local = L.build_alloca (type_of_datatype t (*ltype_of_typ t*)) n builder in
+            let local = L.build_alloca (type_of_datatype t) n builder in
             ignore (L.build_store p local builder);
             StringMap.add n local m
           in
@@ -93,7 +93,7 @@ let translate (functions, stmts) =
       in
 
       let add_local m (t, n) =
-        let local_var = L.build_alloca (type_of_datatype t (*ltype_of_typ t*)) n builder
+        let local_var = L.build_alloca (type_of_datatype t) n builder
         in StringMap.add n local_var m
       in
 
@@ -148,34 +148,20 @@ let translate (functions, stmts) =
           ) e' "tmp" builder
       | A.Assign (s, e) -> let e' = exprgen builder e in
                            ignore (L.build_store e' (lookup s) builder); e'
-      | A.Call ("print", [e]) -> let func e =
-                                   let f = (exprgen builder e) in
-                                 match e with
-        | A.IntLiteral x -> L.build_call printf_func
-                            [| int_format_str; (exprgen builder e) |]
-                            "printf" builder
-        | A.StringLiteral x -> L.build_call printf_func
-                               [| str_format_str; (exprgen builder e) |]
-                               "printf"
-                               builder
-        | A.FloatLiteral x -> L.build_call printf_func
-                              [| float_format_str; (exprgen builder e) |]
-                              "printf" builder
-        | A.BoolLiteral x -> let boolfunc b = match string_of_bool b with
-              | "true" -> L.build_call printf_func
-                          [| str_format_str;
-                             (L.build_global_stringptr "'true'" "" builder)
-                          |] "printf" builder
-              | "false" -> L.build_call printf_func
-                           [| str_format_str;
-                              (L.build_global_stringptr "'false'" "" builder)
-                           |] "printf" builder
-              | _ -> L.build_global_stringptr "---error---" "" builder
-              in boolfunc x
-        | _ -> L.build_call printf_func
-                            [| int_format_str; f |]
-                            "printf" builder
-        in func e
+      | A.Call ("print", [e]) -> 
+          (match (U.type_of_expr fdecl functions e) with
+            | A.Int -> L.build_call printf_func [| int_format_str;
+                            (exprgen builder e) |] "printf" builder
+            | A.Float -> L.build_call printf_func [| float_format_str;
+                            (exprgen builder e) |] "printf" builder
+            | A.String -> L.build_call printf_func [| str_format_str;
+                            (exprgen builder e) |] "printf" builder
+            | A.Bool -> L.build_call printf_func [| int_format_str;
+                            (exprgen builder e) |] "printf" builder
+            | _ -> L.build_call printf_func [| int_format_str;
+                        (exprgen builder e) |] "printf" builder
+          )
+
       | A.Call (f, act) ->
           let (fdef, fdecl) = StringMap.find f function_decls in
           let actuals = List.rev (List.map (exprgen builder) (List.rev act)) in
@@ -252,6 +238,6 @@ let translate (functions, stmts) =
   in
 
   List.iter build_function_body functions;
-  let mainfdecl = A.{ ftype = A.Primitive(A.Int); fname = main_func_name; formals = []; body = [] } in
+  let mainfdecl = A.{ ftype = A.Primitive(A.Int); fname = main_func_name; formals = []; body = stmts } in
   build_function_body mainfdecl;
   the_module

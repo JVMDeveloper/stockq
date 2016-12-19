@@ -1,6 +1,9 @@
 open Ast
 open Parser
 
+module StringMap = Map.Make(String)
+
+
 let string_of_op = function
   | Add     -> "Add"
   | Sub     -> "Sub"
@@ -146,3 +149,118 @@ let string_of_token = function
   | ID(id)              -> "ID"
   | STRING_LITERAL(str) -> "STRING_LITERAL"
   | EOF                 -> "EOF"
+
+(* returns ast type of expr *)
+let type_of_expr func all_funcs = 
+
+  let check_assign lvaluet rvaluet err =
+    if lvaluet == rvaluet then lvaluet else raise err
+  in
+
+  let prim_of_dt = function
+    | Primitive(p)      -> p
+    | Arraytype(p, i)   -> p
+  in
+
+  let print_type = Primitive(Int) in
+  let built_in_decls = StringMap.singleton "print"
+    { ftype = Primitive(Void);
+      fname = "print";
+      formals = [(print_type, "x")];
+      body = [] }
+  in
+
+  let function_decls = List.fold_left (fun m fd -> StringMap.add fd.fname fd m)
+                        built_in_decls all_funcs
+  in
+
+  let function_decl s = try StringMap.find s function_decls
+    with Not_found -> raise (Failure ("unrecognized function " ^ s))
+  in
+
+  let locals =
+    let rec get_locals mylocals = function
+      | [] -> mylocals
+      | [Local (t, s, e)] -> get_locals [(t, s)] []
+      | Local (t, s, e) :: r -> get_locals ((t, s) :: mylocals) r
+      | _ :: r -> get_locals mylocals r
+    in
+    get_locals [] func.body
+  in
+
+  (* Datatype of each variable (formal, or local *)
+  let symbols =
+    List.fold_left (fun m (t, n) -> StringMap.add n (prim_of_dt t) m)
+      StringMap.empty (func.formals @ locals)
+  in
+
+  let type_of_identifier s =
+    try StringMap.find s symbols
+    with Not_found -> raise (Failure ("undeclared identifier " ^ s))
+  in
+
+  let rec expr = function
+    | IntLiteral _    -> Int
+    | FloatLiteral _  -> Float
+    | BoolLiteral _   -> Bool
+    | StringLiteral _ -> String
+    | Id s            -> type_of_identifier s
+    | Binop(e1, op, e2) as e ->
+        let t1 = expr e1
+        and t2 = expr e2 in
+        (match op with
+          | Add | Sub | Mult | Div when t1 = Int && t2 = Int -> Int
+          | Add | Sub | Mult | Div when t1 = Int && t2 = Float -> Float
+          | Add | Sub | Mult | Div when t1 = Float && t2 = Int -> Float
+          | Add | Sub | Mult | Div when t1 = Float && t2 = Float -> Float
+          
+          | Equal | Neq when t1 = t2 -> Bool
+          | Less | Leq | Greater | Geq when t1 = Int && t2 = Int -> Bool
+          | And | Or when t1 = Bool && t2 = Bool -> Bool
+          | _ -> raise (Failure ("illegal binary operator " ^
+              string_of_primitive t1 ^ " " ^ string_of_op op ^ " " ^
+              string_of_primitive t2 ^ " in " ^ string_of_expr e))
+        )
+    | Unop(op, e) as ex -> let t = expr e in
+        (match op with
+          | Neg when t = Int -> Int
+          | Neg when t = Float -> Float
+          | Not when t = Bool -> Bool
+          | _ -> raise (Failure ("illegal unary op " ^ string_of_uop op ^
+                  string_of_primitive t ^ " in " ^ string_of_expr ex))
+        )
+    | Assign(var, e) as ex ->
+        let lt = type_of_identifier var
+        and rt = expr e in
+        check_assign lt rt (Failure ("illegal assignment " ^
+          string_of_primitive lt ^ " = " ^ string_of_primitive rt ^
+          " in " ^ string_of_expr ex))
+    | Call(fname, actuals) as call ->
+        if fname = "print" then
+          if List.length actuals != 1 then
+            raise (Failure ("expecting 1 argument in print")) 
+          else
+            let actual = List.hd actuals in
+            let actual_t = expr actual in
+            (match actual_t with
+              | Int | Float | Bool | String -> actual_t
+              | _ -> raise (Failure ("expecting int or float in print"))
+            )
+        else
+          let fd = function_decl fname in
+          if List.length actuals != List.length fd.formals then
+            raise (Failure ("expecting " ^ string_of_int
+              (List.length fd.formals) ^ " arguments in " ^
+              string_of_expr call))
+          else
+            List.iter2 (fun (ft, _) e ->
+              let ft = prim_of_dt ft in
+              let et = expr e in
+              ignore (check_assign ft et
+                (Failure ("illegal actual argument found " ^
+                  string_of_primitive et ^ " expected " ^
+                  string_of_primitive et ^ " in " ^ string_of_expr e))))
+              fd.formals actuals;
+            prim_of_dt fd.ftype
+    | Noexpr -> Void
+  in expr
