@@ -69,6 +69,7 @@ let rec string_of_expr = function
   | Call(s, el)         -> "Call(" ^ s ^ ", " ^
                            String.concat ", " (List.map string_of_expr el) ^
                            ")"
+  | ArrayCreate(t, el)  -> "ArrayCreate"
   | Noexpr              -> "Noexpr"
 
 let rec string_of_stmt = function
@@ -266,5 +267,6 @@ let type_of_expr func all_funcs =
                   string_of_primitive et ^ " in " ^ string_of_expr e))))
               fd.formals actuals;
             prim_of_dt fd.ftype
+    | ArrayAccess(e, el) -> expr e
     | Noexpr -> Void
   in expr

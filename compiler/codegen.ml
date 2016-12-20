@@ -79,15 +79,33 @@ let translate (functions, stmts) =
     let int_format_str   = L.build_global_stringptr "%d\n" "fmt" builder in
     let float_format_str = L.build_global_stringptr "%f\n" "fmt" builder in
 
+    let rec get_ptr_type datatype = match datatype with
+      | Arraytype(t, 0)   -> type_of_datatype (Primitive(t))
+      | Arraytype(t, 1)   -> L.pointer_type (type_of_datatype (Primitive(t)))
+      | Arraytype(t, i)   -> L.pointer_type (get_ptr_type (Arraytype(t, (i-1))))
+      | _                 -> raise (Failure ("Invalid Array Pointer Type"))
+    in
+
+    let get_type datatype = match datatype with
+      | Arraytype(t, i) -> get_ptr_type (Arraytype(t, (i)))
+      | Primitive(p)    -> type_of_datatype datatype
+      | d -> raise (Failure ("Unable to match array type"))
+    in
+
     (* construct the function's "locals" *)
     let local_vars =
+
       (* get formals first, if this is a function decl *)
       let formals =
         if fdecl.fname = main_func_name then
           StringMap.empty
         else
           let add_formal m (t, n) p = L.set_value_name n p;
-            let local = L.build_alloca (type_of_datatype t) n builder in
+            let t = match t with
+              | Primitive(_) -> type_of_datatype t
+              | Arraytype(_, _) -> get_type t
+            in
+            let local = L.build_alloca t n builder in
             ignore (L.build_store p local builder);
             StringMap.add n local m
           in
@@ -96,7 +114,11 @@ let translate (functions, stmts) =
       in
 
       let add_local m (t, n) =
-        let local_var = L.build_alloca (type_of_datatype t) n builder
+        let t = match t with
+          | Primitive(_) -> type_of_datatype t
+          | Arraytype(_, _) -> get_type t
+        in
+        let local_var = L.build_alloca t n builder
         in StringMap.add n local_var m
       in
 
@@ -186,6 +208,23 @@ let translate (functions, stmts) =
           ) e' "tmp" builder
       | Assign (s, e) -> let e' = exprgen builder e in
                            ignore (L.build_store e' (lookup s) builder); e'
+      | ArrayAssign(e1, e2) ->
+          let codegen_array_access isAssign e el builder =
+            let index = exprgen builder (List.hd el) in
+            let arr = exprgen builder e in
+            let val_t = L.build_gep arr [| index |] "tmp" builder in
+            if isAssign then val_t else L.build_load val_t "tmp" builder
+          in
+
+          let rhs = exprgen builder e2 in
+
+          let lhs = match e1 with
+            | ArrayAccess(e, el) -> codegen_array_access true e el builder
+          in
+
+          ignore (L.build_store rhs lhs builder);
+          rhs
+
       | Call ("print", [e]) -> 
           (match (type_of_expr e) with
             | Int -> L.build_call printf_func [| int_format_str;
@@ -206,6 +245,57 @@ let translate (functions, stmts) =
           let result = (match (ast_type_of_datatype fdecl.ftype) with Void -> ""
                                              | _ -> f ^ "_result")
           in L.build_call fdef (Array.of_list actuals) result builder
+      | ArrayCreate (t, el) ->
+          (* initialize array from DICE *)
+          let initialize_array arr arr_len init_val start_pos builder =
+            let new_block label =
+              let f = L.block_parent (L.insertion_block builder) in
+              L.append_block (L.global_context ()) label f
+            in
+
+            let bbcurr = L.insertion_block builder in
+            let bbcond = new_block "array.cond" in
+            let bbbody = new_block "array.init" in
+            let bbdone = new_block "array.done" in
+            ignore (L.build_br bbcond builder);
+            L.position_at_end bbcond builder;
+            
+            let counter = L.build_phi [L.const_int i32_t start_pos, bbcurr] "counter" builder in
+            L.add_incoming ((L.build_add counter (L.const_int i32_t 1) "tmp" builder), bbbody) counter;
+            let cmp = L.build_icmp L.Icmp.Slt counter arr_len "tmp" builder in
+            ignore (L.build_cond_br cmp bbbody bbdone builder);
+            L.position_at_end bbbody builder;
+
+            let arr_ptr = L.build_gep arr [| counter |] "tmp" builder in
+            ignore (L.build_store init_val arr_ptr builder);
+            ignore (L.build_br bbcond builder);
+            L.position_at_end bbdone builder;
+          in
+
+          let e = List.hd el in
+          let t = get_type t in
+
+          let size = (exprgen builder e) in
+          let size_t = L.build_intcast (L.size_of t) i32_t "tmp" builder in
+          let size = L.build_mul size_t size "tmp" builder in
+          let size_real = L.build_add size (L.const_int i32_t 1) "arr_size" builder in
+
+          let arr = L.build_array_malloc t size_real "tmp" builder in
+          let arr = L.build_pointercast arr (L.pointer_type t) "tmp" builder in
+          let arr_len_ptr = L.build_pointercast arr (L.pointer_type i32_t) "tmp" builder in
+
+          ignore (L.build_store size_real arr_len_ptr builder);
+          initialize_array arr_len_ptr size_real (L.const_int i32_t 0) 0 builder;
+          arr
+
+      | ArrayAccess(e, el) ->
+          let codegen_array_access isAssign e el builder =
+            let index = exprgen builder (List.hd el) in
+            let arr = exprgen builder e in
+            let val_t = L.build_gep arr [| index |] "tmp" builder in
+            if isAssign then val_t else L.build_load val_t "tmp" builder
+          in
+          codegen_array_access false e el builder
       | Noexpr -> L.const_int i32_t 0
     in
     

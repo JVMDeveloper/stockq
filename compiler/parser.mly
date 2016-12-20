@@ -129,8 +129,15 @@ expr:
 |   NOT expr            { Unop (Not, $2) }
 |   MINUS expr          { Unop(Neg, $2) }
 |   ID ASSIGN   expr    { Assign($1, $3) }
+|   expr ASSIGN expr    { ArrayAssign($1, $3) }
 |   ID LPAREN actuals_opt RPAREN    { Call($1, $3) }
+|   primitive bracket_args RBRACKET { ArrayCreate(Primitive($1), List.rev $2) }
+|   expr bracket_args RBRACKET      { ArrayAccess($1, List.rev $2) }
 |   LPAREN expr RPAREN  { $2 }
+
+bracket_args:
+    |       LBRACKET expr                       { [$2] }
+    |       bracket_args RBRACKET LBRACKET expr { $4 :: $1 }
 
 actuals_opt:
             /* nothing */   { [] }

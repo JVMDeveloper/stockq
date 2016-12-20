@@ -151,6 +151,7 @@ let check (functions, stmts) =
           check_assign lt rt (Failure ("illegal assignment " ^
             U.string_of_primitive lt ^ " = " ^ U.string_of_primitive rt ^
             " in " ^ U.string_of_expr ex))
+      | ArrayAssign(e1, e2) -> expr e1
       | Call(fname, actuals) as call ->
           if fname = "print" then
             if List.length actuals != 1 then
@@ -178,6 +179,8 @@ let check (functions, stmts) =
                     U.string_of_primitive et ^ " in " ^ U.string_of_expr e))))
                 fd.formals actuals;
               prim_of_dt fd.ftype
+      | ArrayCreate (t, el) -> prim_of_dt t
+      | ArrayAccess (e, el) -> expr e
       | Noexpr -> Void
     in
 

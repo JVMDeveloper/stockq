@@ -24,7 +24,10 @@ type expr =
   | Binop of expr * op * expr
   | Unop of uop * expr
   | Assign of string * expr
+  | ArrayAssign of expr * expr
   | Call of string * expr list
+  | ArrayCreate of datatype * expr list
+  | ArrayAccess of expr * expr list
   | Noexpr
 
 type stmt =
