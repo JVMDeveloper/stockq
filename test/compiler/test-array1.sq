@@ -1,0 +1,9 @@
+int[] a = int[10];
+int x;
+for(x=0;x<10;x+=1){
+    print(a[x]);
+}
+for(x=0;x<10;x+=1){
+    a[x] = x;
+    print(a[x]);
+}
