@@ -1,0 +1,5 @@
+if (false) {
+    print("don't print me");
+} else if (true - 5) {
+    print("try printing me?");
+}

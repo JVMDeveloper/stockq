@@ -1,0 +1,3 @@
+def float myfunc () {
+    return 3;
+}

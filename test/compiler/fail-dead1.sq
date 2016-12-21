@@ -1,0 +1,6 @@
+def int myfunc () {
+    return 5;
+    print("great");
+}
+
+print(myfunc());
