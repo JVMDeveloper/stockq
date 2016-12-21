@@ -1,0 +1,1 @@
+Fatal error: exception Failure("illegal binary operator int Add string in Binop(Id(x), Add, StringLiteral(hello))")
