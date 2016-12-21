@@ -89,7 +89,6 @@ let translate (functions, stmts) =
     let get_type datatype = match datatype with
       | Arraytype(t, i) -> get_ptr_type (Arraytype(t, (i)))
       | Primitive(p)    -> type_of_datatype datatype
-      | d -> raise (Failure ("Unable to match array type"))
     in
 
     (* construct the function's "locals" *)
@@ -220,6 +219,7 @@ let translate (functions, stmts) =
 
           let lhs = match e1 with
             | ArrayAccess(e, el) -> codegen_array_access true e el builder
+            | _ -> exprgen builder Noexpr
           in
 
           ignore (L.build_store rhs lhs builder);

@@ -71,6 +71,7 @@ let rec string_of_expr = function
                            ")"
   | ArrayCreate(t, el)  -> "ArrayCreate"
   | Noexpr              -> "Noexpr"
+  | _                   -> ""
 
 let rec string_of_stmt = function
   | Block(sl)       ->  "Block(" ^
@@ -269,4 +270,5 @@ let type_of_expr func all_funcs =
             prim_of_dt fd.ftype
     | ArrayAccess(e, el) -> expr e
     | Noexpr -> Void
+    | _ -> Void
   in expr
